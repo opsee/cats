@@ -29,10 +29,6 @@ type GetChecksRequest struct {
 }
 
 func (r *GetChecksRequest) Validate() error {
-	if len(r.Checks) < 1 {
-		return errors.New("Must specify check IDs to retrieve.")
-	}
-
 	return nil
 }
 

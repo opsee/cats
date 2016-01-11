@@ -51,10 +51,21 @@ func NewAssertion(customerID string, checkID string, ass *checker.Assertion) *As
 }
 
 func (pg *Postgres) GetAssertions(user *com.User, checks []string) ([]*Assertion, error) {
-	assertions := []*Assertion{}
-	query, args, err := sqlx.In("SELECT * FROM assertions WHERE customer_id = ? AND check_id IN (?)", user.CustomerID, checks)
-	if err != nil {
-		return nil, err
+	var (
+		assertions []*Assertion
+		query      string
+		args       []interface{}
+		err        error
+	)
+
+	if len(checks) > 0 {
+		query, args, err = sqlx.In("SELECT * FROM assertions WHERE customer_id = ? AND check_id IN (?)", user.CustomerID, checks)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		query = "SELECT * FROM assertions WHERE customer_id = ?"
+		args = []interface{}{user.CustomerID}
 	}
 
 	query = pg.db.Rebind(query)

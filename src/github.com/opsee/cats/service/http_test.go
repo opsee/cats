@@ -51,6 +51,29 @@ func TestGetChecks(t *testing.T) {
 	for _, ass := range assertions {
 		assert.NotNil(t, ass.Key)
 	}
+
+	req, err = http.NewRequest("GET", fmt.Sprintf("%s/assertions", listenAddr), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", testingCreateAuthToken())
+
+	rw = httptest.NewRecorder()
+
+	rtr.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+
+	assertions = []*checker.Assertion{}
+
+	err = json.Unmarshal(rw.Body.Bytes(), &assertions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, 2, len(assertions))
+	for _, ass := range assertions {
+		assert.NotNil(t, ass.Key)
+	}
 }
 
 func TestPutDeleteAssertions(t *testing.T) {
