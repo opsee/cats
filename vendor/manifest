@@ -48,6 +48,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/kelseyhightower/envconfig",
+			"repository": "https://github.com/kelseyhightower/envconfig",
+			"revision": "12c18e8343f6eb5fc3a9d5c8dc353e42e6bb40b9",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/lib/pq",
 			"repository": "https://github.com/lib/pq",
 			"revision": "11fc39a580a008f1f39bb3d11d984fb34ed778d9",

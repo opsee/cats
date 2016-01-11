@@ -22,7 +22,7 @@ func testingCreateAuthToken() string {
 
 func TestGetChecks(t *testing.T) {
 	listenAddr := "http://localhost:8080"
-	svc, err := newService(os.Getenv("POSTGRES_CONN"))
+	svc, err := NewService(os.Getenv("POSTGRES_CONN"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestGetChecks(t *testing.T) {
 
 func TestPutDeleteAssertions(t *testing.T) {
 	listenAddr := "http://localhost:8080"
-	svc, err := newService(os.Getenv("POSTGRES_CONN"))
+	svc, err := NewService(os.Getenv("POSTGRES_CONN"))
 	if err != nil {
 		t.Fatal(err)
 	}

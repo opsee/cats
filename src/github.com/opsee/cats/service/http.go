@@ -18,9 +18,9 @@ const (
 	paramsKey
 )
 
-func (s *service) StartHTTP(addr string) {
+func (s *service) StartHTTP(addr string) error {
 	rtr := s.router()
-	http.ListenAndServe(addr, rtr)
+	return http.ListenAndServe(addr, rtr)
 }
 
 func (s *service) router() *tp.Router {

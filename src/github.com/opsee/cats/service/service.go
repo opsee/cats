@@ -11,7 +11,7 @@ type service struct {
 	db store.Store
 }
 
-func newService(connect string) (*service, error) {
+func NewService(connect string) (*service, error) {
 	svc := new(service)
 	db, err := store.NewPostgres(connect)
 	if err != nil {
