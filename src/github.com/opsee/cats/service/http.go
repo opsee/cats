@@ -32,6 +32,9 @@ func (s *service) router() *tp.Router {
 	)
 
 	//rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
+	rtr.Handle("GET", "/health", []tp.DecodeFunc{}, func(ctx context.Context) (interface{}, int, error) {
+		return ctx, http.StatusOK, nil
+	})
 
 	// /assertions
 	// Retrieve all of a customer assertions -- returns { "items": []*CheckAssertions }
