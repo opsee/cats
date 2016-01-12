@@ -1,0 +1,21 @@
+machine:
+  services:
+    - docker
+  environment:
+    ci: "true"
+dependencies:
+  cache_directories: []
+  override:
+    - docker info
+    - docker pull sameersbn/postgresql:9.4-3
+    - docker run --name postgres -d -e PSQL_TRUST_LOCALNET=true -e DB_USER=postgres -e DB_PASS= -e DB_NAME=cats_test sameersbn/postgresql:9.4-3
+test:
+  override:
+    - make
+deployment:
+  production:
+    branch: master
+    owner: opsee
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io
+      - docker push quay.io/opsee/cats:latest
