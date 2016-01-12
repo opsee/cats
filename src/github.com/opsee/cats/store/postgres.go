@@ -50,7 +50,7 @@ func NewAssertion(customerID string, checkID string, ass *checker.Assertion) *As
 	}
 }
 
-func (pg *Postgres) GetAssertions(user *com.User, checks []string) ([]*Assertion, error) {
+func (pg *Postgres) GetAssertions(user *com.User, checkID string) ([]*Assertion, error) {
 	var (
 		assertions []*Assertion
 		query      string
@@ -58,14 +58,12 @@ func (pg *Postgres) GetAssertions(user *com.User, checks []string) ([]*Assertion
 		err        error
 	)
 
-	if len(checks) > 0 {
-		query, args, err = sqlx.In("SELECT * FROM assertions WHERE customer_id = ? AND check_id IN (?)", user.CustomerID, checks)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		query = "SELECT * FROM assertions WHERE customer_id = ?"
-		args = []interface{}{user.CustomerID}
+	query = "SELECT * FROM assertions WHERE customer_id = ?"
+	args = []interface{}{user.CustomerID}
+
+	if checkID != "" {
+		query = query + " AND check_id = ?"
+		args = append(args, checkID)
 	}
 
 	query = pg.db.Rebind(query)

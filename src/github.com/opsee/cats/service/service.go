@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 
-	"github.com/opsee/cats/checker"
 	"github.com/opsee/cats/store"
 )
 
@@ -23,23 +22,23 @@ func NewService(connect string) (*service, error) {
 	return svc, nil
 }
 
-type GetChecksRequest struct {
-	// Checks is an array of CheckIDs for which to retrieve assertions.
-	Checks []string `json:"checks"`
+type CheckAssertions struct {
+	CheckID    string             `json:"check-id"`
+	Assertions []*store.Assertion `json:"assertions"`
 }
 
-func (r *GetChecksRequest) Validate() error {
-	return nil
-}
+func (c *CheckAssertions) Validate() error {
+	if c.CheckID == "" {
+		return errors.New("CheckAssertions must have valid check-id")
+	}
 
-type PutCheckRequest struct {
-	Check *checker.Check `json:"check"`
-}
-
-func (r *PutCheckRequest) Validate() error {
-	if r.Check == nil {
-		return errors.New("No check found in request.")
+	if len(c.Assertions) < 1 {
+		return errors.New("Use DELETE method to delete assertions.")
 	}
 
 	return nil
+}
+
+type GetChecksResponse struct {
+	Items []*CheckAssertions `json:"items"`
 }

@@ -12,7 +12,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/opsee/cats/checker"
+	"github.com/opsee/basic/tp"
+	"github.com/opsee/cats/store"
 )
 
 func testingCreateAuthToken() string {
@@ -20,16 +21,27 @@ func testingCreateAuthToken() string {
 	return fmt.Sprintf("Basic %s", token)
 }
 
-func TestGetChecks(t *testing.T) {
-	listenAddr := "http://localhost:8080"
-	svc, err := NewService(os.Getenv("POSTGRES_CONN"))
-	if err != nil {
-		t.Fatal(err)
+var testingCommon = struct {
+	listenAddr string
+	svc        *service
+	rtr        *tp.Router
+}{
+	"http://localhost:8080",
+	nil,
+	nil,
+}
+
+func init() {
+	svc, _ := NewService(os.Getenv("CATS_POSTGRES_CONN"))
+	testingCommon.svc = svc
+	if svc != nil {
+		testingCommon.rtr = svc.router()
 	}
+}
 
-	rtr := svc.router()
+func TestGetAssertion(t *testing.T) {
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/assertions?checks=1,2", listenAddr), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/assertions/1", testingCommon.listenAddr), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,90 +49,83 @@ func TestGetChecks(t *testing.T) {
 
 	rw := httptest.NewRecorder()
 
-	rtr.ServeHTTP(rw, req)
+	testingCommon.rtr.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	assertions := []*checker.Assertion{}
+	var resp GetChecksResponse
 
-	err = json.Unmarshal(rw.Body.Bytes(), &assertions)
+	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 2, len(assertions))
-	for _, ass := range assertions {
-		assert.NotNil(t, ass.Key)
+	assert.Equal(t, 1, len(resp.Items))
+	for _, ca := range resp.Items {
+		for _, ass := range ca.Assertions {
+			assert.NotNil(t, ass.Key)
+		}
 	}
+}
 
-	req, err = http.NewRequest("GET", fmt.Sprintf("%s/assertions", listenAddr), nil)
+func TestGetAllAssertions(t *testing.T) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/assertions", testingCommon.listenAddr), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Authorization", testingCreateAuthToken())
 
-	rw = httptest.NewRecorder()
+	rw := httptest.NewRecorder()
 
-	rtr.ServeHTTP(rw, req)
+	testingCommon.rtr.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	assertions = []*checker.Assertion{}
-
-	err = json.Unmarshal(rw.Body.Bytes(), &assertions)
+	var resp GetChecksResponse
+	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 2, len(assertions))
-	for _, ass := range assertions {
-		assert.NotNil(t, ass.Key)
+	assert.Equal(t, 2, len(resp.Items))
+
+	for _, ca := range resp.Items {
+		for _, ass := range ca.Assertions {
+			assert.NotNil(t, ass.Key)
+		}
 	}
 }
 
-func TestPutDeleteAssertions(t *testing.T) {
-	listenAddr := "http://localhost:8080"
-	svc, err := NewService(os.Getenv("POSTGRES_CONN"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rtr := svc.router()
-	assertion := &checker.Assertion{
+func TestPostDeleteAssertions(t *testing.T) {
+	assertion := &store.Assertion{
 		Key:          "foo",
 		Relationship: "notEqual",
 		Value:        "",
 		Operand:      "quux",
 	}
 
-	check := &checker.Check{
-		Id: "3",
-		Assertions: []*checker.Assertion{
+	ca := &CheckAssertions{
+		CheckID: "3",
+		Assertions: []*store.Assertion{
 			assertion,
 		},
 	}
 
-	checkRequest := &PutCheckRequest{
-		Check: check,
-	}
-
-	reqBytes, err := json.Marshal(checkRequest)
+	caBytes, err := json.Marshal(ca)
 	if err != nil {
 		t.Fatal(err)
 	}
+	rdr := bytes.NewBufferString(string(caBytes))
 
-	rdr := bytes.NewBufferString(string(reqBytes))
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/assertions", listenAddr), rdr)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/assertions", testingCommon.listenAddr), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Authorization", testingCreateAuthToken())
 
 	rw := httptest.NewRecorder()
-
-	rtr.ServeHTTP(rw, req)
+	testingCommon.rtr.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	rdr = bytes.NewBufferString(string(reqBytes))
-	req, err = http.NewRequest("DELETE", fmt.Sprintf("%s/assertions", listenAddr), rdr)
+	req, err = http.NewRequest("DELETE", fmt.Sprintf("%s/assertions/3", testingCommon.listenAddr), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,6 +133,49 @@ func TestPutDeleteAssertions(t *testing.T) {
 
 	rw = httptest.NewRecorder()
 
-	rtr.ServeHTTP(rw, req)
+	testingCommon.rtr.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+func TestPutDeleteAssertions(t *testing.T) {
+	assertion := &store.Assertion{
+		Key:          "foo",
+		Relationship: "notEqual",
+		Value:        "",
+		Operand:      "quux",
+	}
+
+	ca := &CheckAssertions{
+		CheckID: "3",
+		Assertions: []*store.Assertion{
+			assertion,
+		},
+	}
+
+	caBytes, err := json.Marshal(ca)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rdr := bytes.NewBufferString(string(caBytes))
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/assertions/3", testingCommon.listenAddr), rdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", testingCreateAuthToken())
+
+	rw := httptest.NewRecorder()
+	testingCommon.rtr.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+
+	req, err = http.NewRequest("DELETE", fmt.Sprintf("%s/assertions/3", testingCommon.listenAddr), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", testingCreateAuthToken())
+
+	rw = httptest.NewRecorder()
+
+	testingCommon.rtr.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 }

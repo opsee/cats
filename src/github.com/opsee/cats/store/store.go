@@ -5,7 +5,7 @@ import (
 )
 
 type Store interface {
-	GetAssertions(*com.User, []string) ([]*Assertion, error)
+	GetAssertions(*com.User, string) ([]*Assertion, error)
 	PutAssertions(*com.User, string, []*Assertion) error
 	DeleteAssertions(*com.User, string) error
 }

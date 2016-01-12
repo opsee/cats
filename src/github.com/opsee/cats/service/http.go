@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
-	"github.com/opsee/cats/store"
 )
 
 const (
@@ -27,19 +27,25 @@ func (s *service) router() *tp.Router {
 	rtr := tp.NewHTTPRouter(context.Background())
 
 	rtr.CORS(
-		[]string{"GET", "POST", "DELETE", "HEAD"},
+		[]string{"GET", "POST", "DELETE", "HEAD", "PUT"},
 		[]string{`https?://localhost:8080`, `https://(\w+\.)?opsee\.com`},
 	)
 
 	//rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
 
-	// The request types may seem nonintuitive, but eventually cats will handle checks and assertions will
-	// be included in checks--leading to the eventual deprecation of the /assertions endpoint. So instead of
-	// sending only assertions here, we will allow the request body to include the entire check for now and
-	// we will get the assertions from it.
-	rtr.Handle("GET", "/assertions", decoders(com.User{}, GetChecksRequest{}), s.getAssertions())
-	rtr.Handle("PUT", "/assertions", decoders(com.User{}, PutCheckRequest{}), s.putAssertions())
-	rtr.Handle("DELETE", "/assertions", decoders(com.User{}, PutCheckRequest{}), s.deleteAssertions())
+	// /assertions
+	// Retrieve all of a customer assertions -- returns { "items": []*CheckAssertions }
+	rtr.Handle("GET", "/assertions", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getAssertions())
+	// Update assertions for a check. Accepts *CheckAssertions, returns *CheckAssertions
+	rtr.Handle("POST", "/assertions", decoders(com.User{}, CheckAssertions{}), s.putAssertions())
+
+	// /assertions/:check_id
+	// Retrieve CheckAssertions for a single check, returns *CheckAssertions
+	rtr.Handle("GET", "/assertions/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getAssertions())
+	// Delete assertions for a single check. Accept nil body, returns nil
+	rtr.Handle("DELETE", "/assertions/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteAssertions())
+	// Update assertions for a single check, Accept *CheckAssertions, return *CheckAssertions
+	rtr.Handle("PUT", "/assertions/:check_id", decoders(com.User{}, CheckAssertions{}), s.putAssertions())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -50,22 +56,25 @@ func decoders(userType interface{}, requestType interface{}) []tp.DecodeFunc {
 	return []tp.DecodeFunc{
 		tp.AuthorizationDecodeFunc(userKey, userType),
 		tp.RequestDecodeFunc(requestKey, requestType),
+		tp.ParamsDecoder(paramsKey),
 	}
 }
 
 func (s *service) getAssertions() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		request, ok := ctx.Value(requestKey).(*GetChecksRequest)
-		if !ok {
-			return ctx, http.StatusInternalServerError, errors.New("Unable to process request.")
-		}
+		var checkID string
 
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
 		}
 
-		assertions, err := s.db.GetAssertions(user, request.Checks)
+		params, ok := ctx.Value(paramsKey).(httprouter.Params)
+		if ok && params.ByName("check_id") != "" {
+			checkID = params.ByName("check_id")
+		}
+
+		assertions, err := s.db.GetAssertions(user, checkID)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
 		}
@@ -73,15 +82,35 @@ func (s *service) getAssertions() tp.HandleFunc {
 		if len(assertions) == 0 {
 			return nil, http.StatusNotFound, nil
 		}
-		return assertions, http.StatusOK, nil
+
+		assmap := make(map[string]*CheckAssertions)
+		for _, assertion := range assertions {
+			if assmap[assertion.CheckID] == nil {
+				assmap[assertion.CheckID] = &CheckAssertions{CheckID: assertion.CheckID}
+			}
+
+			ca := assmap[assertion.CheckID]
+			ca.Assertions = append(ca.Assertions, assertion)
+		}
+
+		resp := &GetChecksResponse{}
+		for _, v := range assmap {
+			resp.Items = append(resp.Items, v)
+		}
+
+		return resp, http.StatusOK, nil
 	}
 }
 
 func (s *service) putAssertions() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		req, ok := ctx.Value(requestKey).(*PutCheckRequest)
+		var checkID string
+
+		req, ok := ctx.Value(requestKey).(*CheckAssertions)
 		if !ok {
 			return ctx, http.StatusInternalServerError, errors.New("Unable to process request.")
+		} else {
+			checkID = req.CheckID
 		}
 
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -89,37 +118,53 @@ func (s *service) putAssertions() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
 		}
 
-		var asses []*store.Assertion
-		for _, ass := range req.Check.Assertions {
-			storeAss := store.NewAssertion(user.CustomerID, req.Check.Id, ass)
-			asses = append(asses, storeAss)
+		params, ok := ctx.Value(paramsKey).(httprouter.Params)
+		if ok && params.ByName("check_id") != "" {
+			checkID = params.ByName("check_id")
 		}
 
-		err := s.db.PutAssertions(user, req.Check.Id, asses)
+		for _, ass := range req.Assertions {
+			ass.CheckID = checkID
+			ass.CustomerID = user.CustomerID
+		}
+
+		err := s.db.PutAssertions(user, checkID, req.Assertions)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
 		}
-		return req.Check, http.StatusOK, nil
+
+		resp := &CheckAssertions{
+			CheckID:    checkID,
+			Assertions: req.Assertions,
+		}
+
+		return resp, http.StatusOK, nil
 	}
 }
 
 func (s *service) deleteAssertions() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		req, ok := ctx.Value(requestKey).(*PutCheckRequest)
-		if !ok {
-			return ctx, http.StatusInternalServerError, errors.New("Unable to process request.")
-		}
+		var checkID string
 
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
 		}
 
-		err := s.db.DeleteAssertions(user, req.Check.Id)
+		params, ok := ctx.Value(paramsKey).(httprouter.Params)
+		if ok && params.ByName("check_id") != "" {
+			checkID = params.ByName("check_id")
+		}
+
+		if checkID == "" {
+			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
+		}
+
+		err := s.db.DeleteAssertions(user, checkID)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		return req.Check, http.StatusOK, nil
+		return nil, http.StatusOK, nil
 	}
 }
