@@ -1,0 +1,5 @@
+ALTER TABLE assertions ALTER COLUMN check_id SET DEFAULT '';
+ALTER TABLE assertions ALTER COLUMN key SET DEFAULT '';
+ALTER TABLE assertions ALTER COLUMN relationship SET DEFAULT '';
+ALTER TABLE assertions ALTER COLUMN value SET DEFAULT '';
+ALTER TABLE assertions ALTER COLUMN operand SET DEFAULT '';
