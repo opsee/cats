@@ -31,7 +31,7 @@ func (s *service) router() *tp.Router {
 		[]string{`https?://localhost:8080`, `https://(\w+\.)?opsee\.com`},
 	)
 
-	//rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
+	rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
 
 	// /assertions
 	// Retrieve all of a customer assertions -- returns { "items": []*CheckAssertions }
@@ -50,6 +50,12 @@ func (s *service) router() *tp.Router {
 	rtr.Timeout(5 * time.Minute)
 
 	return rtr
+}
+
+func (s *service) swagger() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		return swaggerMap, http.StatusOK, nil
+	}
 }
 
 func decoders(userType interface{}, requestType interface{}) []tp.DecodeFunc {
