@@ -1,13 +1,17 @@
 APPENV := testenv
+REV ?= latest
 
-build: fmt $(APPENV)
+build: deps fmt $(APPENV)
 	docker run \
-		--link postgres:postgres \
+		--link cats_postgres_1:postgres \
 		--env-file ./$(APPENV) \
 		-e "TARGETS=linux/amd64" \
 		-v `pwd`:/build \
 		quay.io/opsee/build-go:go15
-	docker build -t quay.io/opsee/cats:latest .
+	docker build -t quay.io/opsee/cats:$(REV) .
+
+deps:
+	docker-compose up -d
 
 fmt:
 	@gofmt -w src/
