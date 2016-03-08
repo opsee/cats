@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/opsee/basic/com"
-	"github.com/opsee/cats/checker"
+	"github.com/opsee/basic/schema"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,7 +39,7 @@ type Assertion struct {
 	Operand      string `json:"operand"`
 }
 
-func NewAssertion(customerID string, checkID string, ass *checker.Assertion) *Assertion {
+func NewAssertion(customerID string, checkID string, ass *schema.Assertion) *Assertion {
 	return &Assertion{
 		CheckID:      checkID,
 		CustomerID:   customerID,
