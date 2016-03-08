@@ -2,7 +2,7 @@ PROJECT := cats
 APPENV := testenv
 REV ?= latest
 
-build: deps fmt $(APPENV)
+build: deps $(APPENV)
 	docker run \
 		--link $(PROJECT)_postgres_1:postgres \
 		--env-file ./$(APPENV) \
