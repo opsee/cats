@@ -1,25 +1,18 @@
 FROM quay.io/opsee/vinz:latest
 
 ENV CATS_POSTGRES_CONN=""
-ENV CATS_LISTEN_ADDR=""
-
-ENV AWS_ACCESS_KEY_ID ""
-ENV AWS_SECRET_ACCESS_KEY ""
-ENV AWS_DEFAULT_REGION "us-west-2"
-ENV AWS_INSTANCE_ID ""
-ENV AWS_SESSION_TOKEN ""
-
+ENV CATS_ADDRESS=""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
     chmod 755 /opt/bin/migrate
-RUN curl -Lo /opt/bin/ec2-env https://s3-us-west-2.amazonaws.com/opsee-releases/go/ec2-env/ec2-env && \
-    chmod 755 /opt/bin/ec2-env
 
 COPY target/linux/amd64/bin/* /
 COPY run.sh /run.sh
 COPY migrations /migrations
+COPY cert.pem /
+COPY key.pem /
 
-EXPOSE 9096
+EXPOSE 9101
 
-ENTRYPOINT ["/run.sh"]
+CMD ["/cats"]

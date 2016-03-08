@@ -3,11 +3,11 @@ set -e
 
 APPENV=${APPENV:-catsenv}
 
-# relying on set -e to catch errors?
-/opt/bin/ec2-env > /ec2env
-eval "$(< /ec2env)"
 /opt/bin/s3kms -r us-west-1 get -b opsee-keys -o dev/$APPENV > /$APPENV
 
 source /$APPENV && \
+  /opt/bin/s3kms -r us-west-1 get -b opsee-keys -o dev/$CATS_CERT > /$CATS_CERT && \
+  /opt/bin/s3kms -r us-west-1 get -b opsee-keys -o dev/$CATS_CERT_KEY > /$CATS_CERT_KEY && \
+  chmod 600 /$CATS_CERT_KEY && \
 	/opt/bin/migrate -url "$CATS_POSTGRES_CONN" -path /migrations up && \
 	/cats

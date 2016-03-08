@@ -1,20 +1,33 @@
+PROJECT := cats
 APPENV := testenv
 REV ?= latest
 
-build: deps fmt $(APPENV)
+build: deps $(APPENV)
 	docker run \
-		--link cats_postgres_1:postgres \
+		--link $(PROJECT)_postgres_1:postgres \
 		--env-file ./$(APPENV) \
 		-e "TARGETS=linux/amd64" \
-		-v `pwd`:/build \
-		quay.io/opsee/build-go:go15
-	docker build -t quay.io/opsee/cats:$(REV) .
+		-e PROJECT=github.com/opsee/$(PROJECT) \
+		-v `pwd`:/gopath/src/github.com/opsee/$(PROJECT) \
+		quay.io/opsee/build-go:16
+	docker build -t quay.io/opsee/$(PROJECT):$(REV) .
+
+run:
+	docker run \
+		--link $(PROJECT)_postgres_1:postgres \
+		--env-file ./$(APPENV) \
+		-e AWS_DEFAULT_REGION \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		-p 9101:9101 \
+		--rm \
+		quay.io/opsee/$(PROJECT):$(REV)
 
 deps:
 	docker-compose up -d
 
 fmt:
-	@gofmt -w src/
+	@govendor fmt +local
 
 migrate:
 	migrate -url $(CATS_POSTGRES_CONN) -path ./migrations up
