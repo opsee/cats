@@ -1,2 +1,2 @@
 CATS_ADDRESS=:9096
-CATS_POSTGRES_CONN=postgres://postgres@postgres/cats_test?sslmode=disable
+CATS_POSTGRES_CONN=postgres://postgres:postgres@postgresql/cats_test?sslmode=disable

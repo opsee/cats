@@ -21,6 +21,17 @@ var (
 	nodeType reflect.Type = findNodeType()
 )
 
+// Unmarshal accepts a byte slice as input and writes the
+// data to the value pointed to by v.
+func Unmarshal(bs []byte, v interface{}) error {
+	root, err := parse(bs)
+	if err != nil {
+		return err
+	}
+
+	return DecodeObject(v, root)
+}
+
 // Decode reads the given input and decodes it into the structure
 // given by `out`.
 func Decode(out interface{}, in string) error {
@@ -464,6 +475,14 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 
 	if ot, ok := node.(*ast.ObjectType); ok {
 		node = ot.List
+	}
+
+	// Handle the special case where the object itself is a literal. Previously
+	// the yacc parser would always ensure top-level elements were arrays. The new
+	// parser does not make the same guarantees, thus we need to convert any
+	// top-level literal elements into a list.
+	if _, ok := node.(*ast.LiteralType); ok {
+		node = &ast.ObjectList{Items: []*ast.ObjectItem{item}}
 	}
 
 	list, ok := node.(*ast.ObjectList)

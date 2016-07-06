@@ -1,7 +1,10 @@
 postgres:
-  image: sameersbn/postgresql:9.4-3
+  image: postgres:9.5
+  ports:
+    - 5439:5432
+    - 5432
   environment:
-    PSQL_TRUST_LOCALNET: "true"
-    DB_USER: postgres
-    DB_PASS: ""
-    DB_NAME: cats_test
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=cats_test
+  container_name: cats_postgresql

@@ -1,7 +1,6 @@
 package service
 
 import (
-	opseeautoscaling
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/cats/store"
 	log "github.com/sirupsen/logrus"
@@ -42,10 +41,4 @@ func (s *service) Start(listenAddr, cert, certkey string) error {
 	}
 
 	return server.Serve(lis)
-}
-
-func (s *service) GetCustomerAWSData(req *opsee.CustomerAWSDataRequest) (*opsee.CustomerAWSDataResponse, error) {
-	switch input := req.Input.(type) {
-	case *schema.
-	}
 }
