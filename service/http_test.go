@@ -32,7 +32,7 @@ var testingCommon = struct {
 }
 
 func init() {
-	svc, _ := NewService(os.Getenv("CATS_POSTGRES_CONN"))
+	svc, _ := New(os.Getenv("CATS_POSTGRES_CONN"))
 	testingCommon.svc = svc
 	if svc != nil {
 		testingCommon.rtr = svc.router()

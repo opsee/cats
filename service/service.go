@@ -1,18 +1,23 @@
 package service
 
 import (
-	"errors"
-
+	opseeautoscaling
+	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/cats/store"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	grpcauth "google.golang.org/grpc/credentials"
+	"net"
 )
 
 type service struct {
 	db store.Store
 }
 
-func NewService(connect string) (*service, error) {
+func New(pgConn string) (*service, error) {
 	svc := new(service)
-	db, err := store.NewPostgres(connect)
+	db, err := store.NewPostgres(pgConn)
 	if err != nil {
 		return nil, err
 	}
@@ -22,23 +27,25 @@ func NewService(connect string) (*service, error) {
 	return svc, nil
 }
 
-type CheckAssertions struct {
-	CheckID    string             `json:"check-id"`
-	Assertions []*store.Assertion `json:"assertions"`
-}
-
-func (c *CheckAssertions) Validate() error {
-	if c.CheckID == "" {
-		return errors.New("CheckAssertions must have valid check-id")
+func (s *service) Start(listenAddr, cert, certkey string) error {
+	auth, err := grpcauth.NewServerTLSFromFile(cert, certkey)
+	if err != nil {
+		return err
 	}
 
-	if len(c.Assertions) < 1 {
-		return errors.New("Use DELETE method to delete assertions.")
+	server := grpc.NewServer(grpc.Creds(auth))
+	opsee.RegisterCatsServer(server, s)
+
+	lis, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return server.Serve(lis)
 }
 
-type GetChecksResponse struct {
-	Items []*CheckAssertions `json:"items"`
+func (s *service) GetCustomerAWSData(req *opsee.CustomerAWSDataRequest) (*opsee.CustomerAWSDataResponse, error) {
+	switch input := req.Input.(type) {
+	case *schema.
+	}
 }

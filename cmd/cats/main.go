@@ -10,7 +10,7 @@ func main() {
 	viper.SetEnvPrefix("cats")
 	viper.AutomaticEnv()
 
-	svc, err := service.NewService(viper.GetString("postgres_conn"))
+	svc, err := service.New(viper.GetString("postgres_conn"))
 	if err != nil {
 		log.WithError(err).Fatal("Unable to start service.")
 	}
