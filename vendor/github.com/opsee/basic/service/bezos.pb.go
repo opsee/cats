@@ -7,6 +7,7 @@
 
 	It is generated from these files:
 		bezos.proto
+		cats.proto
 		checker.proto
 		keelhaul.proto
 		spanx.proto
@@ -15,6 +16,8 @@
 	It has these top-level messages:
 		BezosRequest
 		BezosResponse
+		GetCheckCountRequest
+		GetCheckCountResponse
 		CheckResourceResponse
 		ResourceResponse
 		CheckResourceRequest

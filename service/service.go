@@ -1,13 +1,17 @@
 package service
 
 import (
+	"crypto/tls"
+	"fmt"
+	"net/http"
+
+	"github.com/opsee/basic/grpcutil"
 	opsee "github.com/opsee/basic/service"
+	"github.com/opsee/basic/tp"
 	"github.com/opsee/cats/store"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	grpcauth "google.golang.org/grpc/credentials"
-	"net"
 )
 
 type service struct {
@@ -22,23 +26,44 @@ func New(pgConn string) (*service, error) {
 	}
 
 	svc.db = db
-
 	return svc, nil
 }
 
-func (s *service) Start(listenAddr, cert, certkey string) error {
-	auth, err := grpcauth.NewServerTLSFromFile(cert, certkey)
-	if err != nil {
-		return err
-	}
+// http / grpc multiplexer for http health checks
+func (s *service) StartMux(addr, certfile, certkeyfile string) error {
+	router := tp.NewHTTPRouter(context.Background())
+	server := grpc.NewServer()
 
-	server := grpc.NewServer(grpc.Creds(auth))
 	opsee.RegisterCatsServer(server, s)
 
-	lis, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return err
+	httpServer := &http.Server{
+		Addr:      addr,
+		Handler:   grpcutil.GRPCHandlerFunc(server, router),
+		TLSConfig: &tls.Config{},
 	}
 
-	return server.Serve(lis)
+	return httpServer.ListenAndServeTLS(certfile, certkeyfile)
+}
+
+func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountRequest) (*opsee.GetCheckCountResponse, error) {
+	if req.User == nil {
+		log.Error("no user in request")
+		return nil, fmt.Errorf("user is required")
+	}
+
+	if err := req.User.Validate(); err != nil {
+		log.WithError(err).Error("user is invalid")
+		return nil, err
+	}
+
+	count, err := s.db.GetCheckCount(req.User, req.Prorated)
+	if err != nil {
+		log.WithError(err).Error("db request failed")
+		return nil, err
+	}
+
+	return &opsee.GetCheckCountResponse{
+		Prorated: req.Prorated,
+		Count:    count,
+	}, nil
 }
