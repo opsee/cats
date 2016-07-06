@@ -1,14 +1,10 @@
 package store
 
 import (
-	"errors"
-
 	_ "database/sql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/schema"
-	log "github.com/sirupsen/logrus"
 )
 
 type Postgres struct {
@@ -28,103 +24,10 @@ func NewPostgres(connection string) (Store, error) {
 	}, nil
 }
 
-// Assertion and checker.Assertion could become confusing eventually, but it seems
-// necessary atm.
-type Assertion struct {
-	CheckID      string `json:"-" db:"check_id"`
-	CustomerID   string `json:"-" db:"customer_id"`
-	Key          string `json:"key"`
-	Relationship string `json:"relationship"`
-	Value        string `json:"value,omitempty"`
-	Operand      string `json:"operand"`
+func (pg *Postgres) GetCheckCount(user *schema.User, prorated bool) (float32, error) {
+	return pg.getCheckCount(pg.db, user, prorated)
 }
 
-func NewAssertion(customerID string, checkID string, ass *schema.Assertion) *Assertion {
-	return &Assertion{
-		CheckID:      checkID,
-		CustomerID:   customerID,
-		Key:          ass.Key,
-		Relationship: ass.Relationship,
-		Value:        ass.Value,
-		Operand:      ass.Operand,
-	}
-}
-
-func (pg *Postgres) GetAssertions(user *com.User, checkID string) ([]*Assertion, error) {
-	var (
-		assertions []*Assertion
-		query      string
-		args       []interface{}
-		err        error
-	)
-
-	query = "SELECT * FROM assertions WHERE customer_id = ?"
-	args = []interface{}{user.CustomerID}
-
-	if checkID != "" {
-		query = query + " AND check_id = ?"
-		args = append(args, checkID)
-	}
-
-	query = pg.db.Rebind(query)
-	rows, err := pg.db.Queryx(query, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		var a Assertion
-		err := rows.StructScan(&a)
-		if err != nil {
-			panic(err)
-		}
-		assertions = append(assertions, &a)
-	}
-
-	return assertions, err
-}
-
-func (pg *Postgres) PutAssertions(user *com.User, checkID string, assertions []*Assertion) error {
-	if user == nil {
-		return errors.New("PutAssertion received nil user.")
-	}
-
-	if checkID == "" {
-		return errors.New("PutAssertion received empty checkID")
-	}
-
-	tx, err := pg.db.Beginx()
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("DELETE FROM assertions WHERE customer_id = $1 AND check_id = $2", user.CustomerID, checkID)
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.WithError(err).Error("Error calling rollback on transaction.")
-		}
-		return err
-	}
-
-	for _, assertion := range assertions {
-		_, err = tx.NamedExec(
-			`INSERT INTO assertions 
-			  VALUES (:check_id, :customer_id, :key, 
-			  :relationship, :value, :operand);`,
-			assertion,
-		)
-		if err != nil {
-			if err := tx.Rollback(); err != nil {
-				log.WithError(err).Error("Error calling rollback on transaction.")
-			}
-			return err
-		}
-	}
-
-	return tx.Commit()
-}
-
-func (pg *Postgres) DeleteAssertions(user *com.User, checkID string) error {
-	_, err := pg.db.Exec("DELETE FROM assertions WHERE customer_id = $1 AND check_id = $2", user.CustomerID, checkID)
-	return err
+func (pg *Postgres) getCheckCount(x sqlx.Ext, user *schema.User, prorated bool) (float32, error) {
+	return float32(0), nil
 }

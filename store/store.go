@@ -1,11 +1,9 @@
 package store
 
 import (
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 )
 
 type Store interface {
-	GetAssertions(*com.User, string) ([]*Assertion, error)
-	PutAssertions(*com.User, string, []*Assertion) error
-	DeleteAssertions(*com.User, string) error
+	GetCheckCount(user *schema.User, prorated bool) (float32, error)
 }
