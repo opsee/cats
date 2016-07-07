@@ -87,3 +87,21 @@ func GetMemo(q sqlx.Ext, checkId, bastionId string) (*checks.ResultMemo, error) 
 
 	return memo, nil
 }
+
+// CreateStateTransitionLogEntry creates and stores a StateTransitionLogEntry, returning the created
+// log entry or an error.
+func CreateStateTransitionLogEntry(q sqlx.Ext, checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error) {
+	var logEntryID int
+	err := q.QueryRowx("INSERT INTO check_state_transitions (check_id, customer_id, from_state, to_state) VALUES ($1, $2, $3, $4) RETURNING id", checkId, customerId, fromState, toState).Scan(&logEntryID)
+	if err != nil {
+		return nil, err
+	}
+
+	var logEntry *checks.StateTransitionLogEntry
+	err = q.QueryRowx("SELECT * FROM check_state_transitions WHERE id=$1", logEntryID).StructScan(logEntry)
+	if err != nil {
+		return nil, err
+	}
+
+	return logEntry, nil
+}

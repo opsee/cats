@@ -20,6 +20,7 @@ import (
 	"github.com/opsee/cats/checks"
 	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/checks/worker"
+	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/viper"
@@ -179,7 +180,7 @@ func main() {
 		return nil
 	})
 
-	checks.AddHook(func(id checks.StateId, state *checks.State, result *schema.CheckResult) {
+	checks.AddHook(func(newStateID checks.StateId, state *checks.State, result *schema.CheckResult) {
 		logger := log.WithFields(log.Fields{
 			"customer_id":       state.CustomerId,
 			"check_id":          state.CheckId,
@@ -188,9 +189,15 @@ func main() {
 			"failing_count":     state.FailingCount,
 			"failing_time_s":    state.TimeInState().Seconds(),
 			"old_state":         state.State,
-			"new_state":         id.String(),
+			"new_state":         newStateID.String(),
 		})
-		logger.Info("check state changed")
+
+		logEntry, err := store.CreateStateTransitionLogEntry(db, state.CheckId, state.CustomerId, state.Id, newStateID)
+		if err != nil {
+			logger.WithError(err).Error("Error creating StateTransitionLogEntry")
+		}
+
+		logger.Infof("Created StateTransitionLogEntry: %d", logEntry.Id)
 	})
 
 	publishToNSQ := func(result *schema.CheckResult) {
