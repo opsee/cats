@@ -2,6 +2,7 @@ package store
 
 import (
 	_ "database/sql"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/opsee/basic/schema"
