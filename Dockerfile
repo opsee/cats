@@ -18,4 +18,4 @@ COPY key.pem /
 
 EXPOSE 9101
 
-CMD ["/run.sh"]
+CMD ["/cats"]
