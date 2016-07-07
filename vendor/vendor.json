@@ -600,6 +600,24 @@
 			"revisionTime": "2016-03-05T16:54:46Z"
 		},
 		{
+			"checksumSHA1": "MjIt0cKHBT7E/Vp2v8kizU/ybeg=",
+			"path": "github.com/stripe/stripe-go",
+			"revision": "f9333052aca9fb832f155e8429ea2569042598cb",
+			"revisionTime": "2016-06-30T11:18:25-07:00"
+		},
+		{
+			"checksumSHA1": "g4KO1AUv2DhohGAE51AkwCbF5nY=",
+			"path": "github.com/stripe/stripe-go/customer",
+			"revision": "f9333052aca9fb832f155e8429ea2569042598cb",
+			"revisionTime": "2016-06-30T11:18:25-07:00"
+		},
+		{
+			"checksumSHA1": "y5AD80EvDutFqGuAYsBtcya6ntM=",
+			"path": "github.com/stripe/stripe-go/orderitem",
+			"revision": "f9333052aca9fb832f155e8429ea2569042598cb",
+			"revisionTime": "2016-06-30T11:18:25-07:00"
+		},
+		{
 			"checksumSHA1": "UADS3X1kxl+/qqeGcmTo0rBiXlQ=",
 			"path": "github.com/ugorji/go/codec",
 			"revision": "b94837a2404ab90efe9289e77a70694c355739cb",
