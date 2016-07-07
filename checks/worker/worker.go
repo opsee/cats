@@ -105,6 +105,13 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	if err != nil {
 		logger.WithError(err).Error("Error getting state.")
 		rollback(logger, tx)
+
+		// this is when the check has been deleted or soft deleted, return no error so we don't
+		// requeue results
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 	logger.Debug("Got state: ", state)
