@@ -14,7 +14,7 @@ import (
 // assumes a present state of OK.
 func GetAndLockState(q sqlx.Ext, customerId, checkId string) (*checks.State, error) {
 	state := &checks.State{}
-	err := sqlx.Get(q, state, "SELECT states.state_id, states.customer_id, states.check_id, states.state_name, states.time_entered, states.last_updated, checks.min_failing_count, checks.min_failing_time, states.failing_count, states.response_count FROM check_states AS states JOIN checks ON (checks.id = states.check_id) WHERE states.customer_id = $1 AND checks.id = $2 FOR UPDATE OF states", customerId, checkId)
+	err := sqlx.Get(q, state, "SELECT states.state_id, states.customer_id, states.check_id, states.state_name, states.time_entered, states.last_updated, checks.min_failing_count, checks.min_failing_time, states.failing_count, states.response_count FROM check_states AS states JOIN checks ON (checks.id = states.check_id) WHERE states.customer_id = $1 AND checks.id = $2 AND checks.deleted = false FOR UPDATE OF states", customerId, checkId)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func GetAndLockState(q sqlx.Ext, customerId, checkId string) (*checks.State, err
 		// Return an error if the check doesn't exist
 		// check, err := store.GetCheck(customerId, checkId)
 		check := &schema.Check{}
-		err := sqlx.Get(q, check, "SELECT id, customer_id, min_failing_count, min_failing_time FROM checks WHERE customer_id = $1 AND id = $2", customerId, checkId)
+		err := sqlx.Get(q, check, "SELECT id, customer_id, min_failing_count, min_failing_time FROM checks WHERE customer_id = $1 AND id = $2 and deleted = false", customerId, checkId)
 		if err != nil {
 			return nil, err
 		}

@@ -58,22 +58,34 @@ func (s *fakeStore) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, 
 }
 
 func TestPutResultFailure(t *testing.T) {
-	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
-	assert.Nil(t, err)
+	db := testSetupFixtures()
 	dynamo := &fakeStore{true}
 	result := mockResult(2, 0)
 
 	wrkr := NewCheckWorker(db, dynamo, result)
-	_, err = wrkr.Execute()
+	_, err := wrkr.Execute()
 	assert.NotNil(t, err)
 }
 
-func TestExistingState(t *testing.T) {
-	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
-	assert.Nil(t, err)
-	db.MustExec("DELETE FROM check_states")
-	db.MustExec("DELETE FROM check_state_memos")
+func TestDeletedCheck(t *testing.T) {
+	db := testSetupFixtures()
+	db.MustExec("update checks set deleted = true")
+	dynamo := &fakeStore{false}
+	result := mockResult(2, 1)
 
+	wrkr := NewCheckWorker(db, dynamo, result)
+	_, err := wrkr.Execute()
+	assert.Nil(t, err)
+
+	// make sure no check state has been created
+	r, err := db.Queryx("select * from check_states")
+	assert.Nil(t, err)
+	defer r.Close()
+	assert.Equal(t, false, r.Next())
+}
+
+func TestExistingState(t *testing.T) {
+	db := testSetupFixtures()
 	dynamo := &fakeStore{false}
 	result := mockResult(2, 1)
 
@@ -86,7 +98,7 @@ func TestExistingState(t *testing.T) {
 		LastUpdated: time.Now(),
 	}
 
-	err = store.PutState(db, state)
+	err := store.PutState(db, state)
 	assert.Nil(t, err)
 
 	wrkr := NewCheckWorker(db, dynamo, result)
@@ -104,11 +116,16 @@ func TestExistingState(t *testing.T) {
 	tx.Commit()
 }
 
-func testSetupFixtures() {
+func testSetupFixtures() *sqlx.DB {
 	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
 	if err != nil {
 		panic(err)
 	}
+
+	db.MustExec("DELETE FROM checks")
+	db.MustExec("DELETE FROM check_states")
+	db.MustExec("DELETE FROM check_state_memos")
+
 	check := &schema.Check{
 		Id:               "check-id",
 		CustomerId:       "11111111-1111-1111-1111-111111111111",
@@ -121,13 +138,13 @@ func testSetupFixtures() {
 	if err != nil {
 		panic(err)
 	}
+
+	return db
 }
 
 func TestMain(m *testing.M) {
 	viper.SetEnvPrefix("cats")
 	viper.AutomaticEnv()
-
-	testSetupFixtures()
 
 	os.Exit(m.Run())
 }
