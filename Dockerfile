@@ -2,6 +2,9 @@ FROM quay.io/opsee/vinz:latest
 
 ENV CATS_POSTGRES_CONN=""
 ENV CATS_ADDRESS=""
+ENV CATS_ETCD_ADDRESS=""
+ENV CATS_NSQLOOKUPD_ADDRS=""
+ENV CATS_MAX_TASKS=""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
@@ -15,4 +18,4 @@ COPY key.pem /
 
 EXPOSE 9101
 
-CMD ["/cats"]
+CMD ["/run.sh"]
