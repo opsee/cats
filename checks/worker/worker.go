@@ -88,6 +88,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 
 	memo.FailingCount = int32(w.result.FailingCount())
 	memo.ResponseCount = len(w.result.Responses)
+	memo.LastUpdated = resultTimestamp
 
 	if err := store.PutMemo(tx, memo); err != nil {
 		logger.WithError(err).Error("Error putting check state memo.")
