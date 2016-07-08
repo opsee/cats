@@ -2,7 +2,6 @@ package service
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 
 	"github.com/opsee/basic/grpcutil"
@@ -35,6 +34,7 @@ func (s *service) StartMux(addr, certfile, certkeyfile string) error {
 	server := grpc.NewServer()
 
 	opsee.RegisterCatsServer(server, s)
+	log.Infof("starting cats service at %s", addr)
 
 	httpServer := &http.Server{
 		Addr:      addr,
@@ -43,27 +43,4 @@ func (s *service) StartMux(addr, certfile, certkeyfile string) error {
 	}
 
 	return httpServer.ListenAndServeTLS(certfile, certkeyfile)
-}
-
-func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountRequest) (*opsee.GetCheckCountResponse, error) {
-	if req.User == nil {
-		log.Error("no user in request")
-		return nil, fmt.Errorf("user is required")
-	}
-
-	if err := req.User.Validate(); err != nil {
-		log.WithError(err).Error("user is invalid")
-		return nil, err
-	}
-
-	count, err := s.db.GetCheckCount(req.User, req.Prorated)
-	if err != nil {
-		log.WithError(err).Error("db request failed")
-		return nil, err
-	}
-
-	return &opsee.GetCheckCountResponse{
-		Prorated: req.Prorated,
-		Count:    count,
-	}, nil
 }
