@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/s3"
 	etcd "github.com/coreos/etcd/client"
 	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
@@ -115,7 +116,10 @@ func main() {
 
 	kapi := etcd.NewKeysAPI(etcdClient)
 
-	dynamo := &results.DynamoStore{dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")}))}
+	awsSession := session.New(&aws.Config{Region: aws.String("us-west-2")})
+	dynamo := &results.DynamoStore{dynamodb.New(awsSession)}
+	s3Store := &results.S3Store{s3.New(awsSession)}
+
 	consumer.AddHandler(func(msg *nsq.Message) error {
 		result := &schema.CheckResult{}
 		if err := proto.Unmarshal(msg.Body, result); err != nil {
@@ -169,12 +173,26 @@ func main() {
 
 		// For now, the region is just static, because we only have dynamodb in one region.
 
-		task := worker.NewCheckWorker(db, dynamo, result)
+		task := worker.NewCheckWorker(db, result)
 		_, err = task.Execute()
 		if err != nil {
 			logger.WithError(err).Error("Error executing task.")
 			return err
 		}
+
+		go func(r *schema.CheckResult, logger *log.Entry) {
+			err := s3Store.PutResult(r)
+			if err != nil {
+				logger.WithError(err).Error("Error putting result to s3")
+			}
+		}(result, logger)
+
+		go func(r *schema.CheckResult, logger *log.Entry) {
+			err := dynamo.PutResult(r)
+			if err != nil {
+				logger.WithError(err).Error("Error putting result to dynamodb")
+			}
+		}(result, logger)
 
 		checkResultsHandled.Inc()
 		return nil
