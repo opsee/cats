@@ -45,7 +45,7 @@ func Create(team *schema.Team, user *schema.User, quantity uint64, tokenSource s
 		return err
 	}
 
-	if err = Plan(team.Subscription).Validate(); err != nil {
+	if err := Plan(team.Subscription).Validate(); err != nil {
 		return err
 	}
 
@@ -54,8 +54,8 @@ func Create(team *schema.Team, user *schema.User, quantity uint64, tokenSource s
 		Plan:  team.Subscription,
 	}
 
-	if source != "" {
-		sp, err := stripe.SourceParamsFor(source)
+	if tokenSource != "" {
+		sp, err := stripe.SourceParamsFor(tokenSource)
 		if err != nil {
 			return err
 		}
