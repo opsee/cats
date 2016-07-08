@@ -97,7 +97,7 @@ func CreateStateTransitionLogEntry(q sqlx.Ext, checkId, customerId string, fromS
 		return nil, err
 	}
 
-	var logEntry *checks.StateTransitionLogEntry
+	logEntry := &checks.StateTransitionLogEntry{}
 	err = q.QueryRowx("SELECT * FROM check_state_transitions WHERE id=$1", logEntryID).StructScan(logEntry)
 	if err != nil {
 		return nil, err

@@ -186,7 +186,7 @@ func main() {
 		go func(r *schema.CheckResult, logger *log.Entry) {
 			err := s3Store.PutResult(r)
 			if err != nil {
-				logger.WithError(err).Error("Error putting result to s3")
+				logger.WithFields(log.Fields{"bucket_name": s3Store.BucketName}).WithError(err).Error("Error putting result to s3")
 			}
 		}(result, logger)
 
