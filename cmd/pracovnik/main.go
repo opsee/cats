@@ -40,7 +40,7 @@ func init() {
 }
 
 func main() {
-	viper.SetEnvPrefix("pracovnik")
+	viper.SetEnvPrefix("cats")
 	viper.AutomaticEnv()
 
 	viper.SetDefault("log_level", "info")
