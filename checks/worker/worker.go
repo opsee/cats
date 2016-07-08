@@ -90,7 +90,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	memo.ResponseCount = len(w.result.Responses)
 
 	if err := store.PutMemo(tx, memo); err != nil {
-		logger.Debug("Error putting check state memo.")
+		logger.WithError(err).Error("Error putting check state memo.")
 		rollback(logger, tx)
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	logger.Debug("Got state: ", state)
 
 	if err := store.UpdateState(tx, state); err != nil {
-		logger.Debug("Error updating state from DB.")
+		logger.WithError(err).Error("Error updating state from DB.")
 		rollback(logger, tx)
 		return nil, err
 	}
