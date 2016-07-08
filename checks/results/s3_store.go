@@ -12,22 +12,17 @@ import (
 	"github.com/opsee/basic/schema"
 )
 
-const (
-	// CheckResultS3BucketName is the name of the S3 bucket where check results are
-	// stored.
-	CheckResultS3BucketName = "opsee-check-results"
-)
-
 // S3Store stores CheckResult objects in S3 by ResultId (check_id:bastion_id).
 type S3Store struct {
-	S3Client *s3.S3
+	BucketName string
+	S3Client   *s3.S3
 }
 
 // GetResultsByCheckId gets the latest CheckResults for a Check from persistent storage.
 func (s *S3Store) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, error) {
 	resultsPath := fmt.Sprintf("latest/%s", checkId)
 	resp, err := s.S3Client.ListObjects(&s3.ListObjectsInput{
-		Bucket:    aws.String(CheckResultS3BucketName),
+		Bucket:    aws.String(s.BucketName),
 		Delimiter: aws.String("/"),
 		Prefix:    aws.String(resultsPath),
 	})
@@ -38,7 +33,7 @@ func (s *S3Store) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, er
 	results := make([]*schema.CheckResult, len(resp.Contents))
 	for i, obj := range resp.Contents {
 		getObjResp, err := s.S3Client.GetObject(&s3.GetObjectInput{
-			Bucket:              aws.String(CheckResultS3BucketName),
+			Bucket:              aws.String(s.BucketName),
 			Key:                 obj.Key,
 			ResponseContentType: aws.String("application/octet-stream"),
 		})
@@ -74,7 +69,7 @@ func (s *S3Store) PutResult(result *schema.CheckResult) error {
 	reader := bytes.NewReader(resultBytes)
 
 	_, err = s.S3Client.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(CheckResultS3BucketName),
+		Bucket: aws.String(s.BucketName),
 		Key:    aws.String(resultPath),
 		Body:   reader,
 	})
