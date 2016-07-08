@@ -81,7 +81,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	// transition. In any other case, we transition.
 	resultTimestamp := time.Unix(w.result.Timestamp.Seconds, int64(w.result.Timestamp.Nanos))
 	if err == nil && (memo.LastUpdated.After(resultTimestamp) || memo.LastUpdated.Equal(resultTimestamp)) {
-		logger.Debug("Skipping older result because we have a newer result memo.")
+		logger.Error("Skipping older result because we have a newer result memo.")
 		rollback(logger, tx)
 		return nil, nil
 	}
