@@ -118,7 +118,10 @@ func main() {
 
 	awsSession := session.New(&aws.Config{Region: aws.String("us-west-2")})
 	dynamo := &results.DynamoStore{dynamodb.New(awsSession)}
-	s3Store := &results.S3Store{s3.New(awsSession)}
+	s3Store := &results.S3Store{
+		S3Client:   s3.New(awsSession),
+		BucketName: viper.GetString("results_s3_bucket"),
+	}
 
 	consumer.AddHandler(func(msg *nsq.Message) error {
 		result := &schema.CheckResult{}
