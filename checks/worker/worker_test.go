@@ -57,26 +57,14 @@ func (s *fakeStore) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, 
 	return nil, nil
 }
 
-func TestPutResultFailure(t *testing.T) {
-	db := testSetupFixtures()
-	dynamo := &fakeStore{true}
-	result := mockResult(2, 0)
-
-	wrkr := NewCheckWorker(db, dynamo, result)
-	_, err := wrkr.Execute()
-	assert.NotNil(t, err)
-}
-
 func TestDeletedCheck(t *testing.T) {
 	db := testSetupFixtures()
 	db.MustExec("update checks set deleted = true")
-	dynamo := &fakeStore{false}
 	result := mockResult(2, 1)
 
-	wrkr := NewCheckWorker(db, dynamo, result)
+	wrkr := NewCheckWorker(db, result)
 	_, err := wrkr.Execute()
 	assert.Nil(t, err)
-
 	// make sure no check state has been created
 	r, err := db.Queryx("select * from check_states")
 	assert.Nil(t, err)
@@ -86,8 +74,10 @@ func TestDeletedCheck(t *testing.T) {
 
 func TestExistingState(t *testing.T) {
 	db := testSetupFixtures()
-	dynamo := &fakeStore{false}
 	result := mockResult(2, 1)
+	ts := &opsee_types.Timestamp{}
+	ts.Scan(time.Now().Add(30 * time.Second))
+	result.Timestamp = ts
 
 	state := &checks.State{
 		CheckId:     "check-id",
@@ -101,7 +91,7 @@ func TestExistingState(t *testing.T) {
 	err := store.PutState(db, state)
 	assert.Nil(t, err)
 
-	wrkr := NewCheckWorker(db, dynamo, result)
+	wrkr := NewCheckWorker(db, result)
 	_, err = wrkr.Execute()
 	assert.Nil(t, err)
 

@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/checks"
-	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
@@ -21,7 +20,6 @@ var (
 
 type CheckWorker struct {
 	db      *sqlx.DB
-	rStore  results.Store
 	context context.Context
 	result  *schema.CheckResult
 }
@@ -42,10 +40,9 @@ func commit(logger log.FieldLogger, tx *sqlx.Tx) error {
 	return err
 }
 
-func NewCheckWorker(db *sqlx.DB, rStore results.Store, result *schema.CheckResult) *CheckWorker {
+func NewCheckWorker(db *sqlx.DB, result *schema.CheckResult) *CheckWorker {
 	return &CheckWorker{
 		db:      db,
-		rStore:  rStore,
 		context: context.Background(),
 		result:  result,
 	}
@@ -75,17 +72,15 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 		rollback(logger, tx)
 		return nil, err
 	}
+
 	if err == sql.ErrNoRows {
 		memo = checks.ResultMemoFromCheckResult(w.result)
 	}
 
-	resultTimestamp := time.Unix(w.result.Timestamp.Seconds, int64(w.result.Timestamp.Nanos))
 	// We've seen this bastion before, and we have a newer result so we don't
 	// transition. In any other case, we transition.
-	//
-	// TODO(greg): When we have historical results, this will still have to be
-	// put into the cold dynamodb table.
-	if memo.LastUpdated.After(resultTimestamp) {
+	resultTimestamp := time.Unix(w.result.Timestamp.Seconds, int64(w.result.Timestamp.Nanos))
+	if err == nil && (memo.LastUpdated.After(resultTimestamp) || memo.LastUpdated.Equal(resultTimestamp)) {
 		logger.Debug("Skipping older result because we have a newer result memo.")
 		rollback(logger, tx)
 		return nil, nil
@@ -145,11 +140,6 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 		logger.WithError(err).Error("Could not commit check state.")
 	}
 	logger.Debug("committed state.")
-
-	if err := w.rStore.PutResult(w.result); err != nil {
-		logger.WithError(err).Error("Error putting CheckResult to dynamodb.")
-		return nil, err
-	}
 
 	return nil, nil
 }
