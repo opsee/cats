@@ -34,3 +34,5 @@ _testmain.go
 /bin/
 /pkg/
 /target/
+
+users.sql

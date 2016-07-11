@@ -11,13 +11,29 @@
 		checker.proto
 		keelhaul.proto
 		spanx.proto
-		vape.proto
 
 	It has these top-level messages:
 		BezosRequest
 		BezosResponse
 		GetCheckCountRequest
 		GetCheckCountResponse
+		ListCustomersResponse
+		GetUserRequest
+		GetUserResponse
+		ListUsersRequest
+		ListUsersResponse
+		InviteUserRequest
+		InviteUserResponse
+		DeleteUserRequest
+		DeleteUserResponse
+		UpdateUserRequest
+		UserTokenResponse
+		GetTeamRequest
+		GetTeamResponse
+		UpdateTeamRequest
+		UpdateTeamResponse
+		DeleteTeamRequest
+		DeleteTeamResponse
 		CheckResourceResponse
 		ResourceResponse
 		CheckResourceRequest
@@ -39,23 +55,6 @@
 		GetRoleStackResponse
 		GetCredentialsRequest
 		GetCredentialsResponse
-		ListCustomersResponse
-		GetUserRequest
-		GetUserResponse
-		ListUsersRequest
-		ListUsersResponse
-		InviteUserRequest
-		InviteUserResponse
-		DeleteUserRequest
-		DeleteUserResponse
-		UpdateUserRequest
-		UserTokenResponse
-		GetTeamRequest
-		GetTeamResponse
-		UpdateTeamRequest
-		UpdateTeamResponse
-		DeleteTeamRequest
-		DeleteTeamResponse
 */
 package service
 
