@@ -213,7 +213,8 @@ func main() {
 			"new_state":         newStateID.String(),
 		})
 
-		logEntry, err := store.CreateStateTransitionLogEntry(db, state.CheckId, state.CustomerId, state.Id, newStateID)
+		checkStore := store.NewCheckStore(db)
+		logEntry, err := checkStore.CreateStateTransitionLogEntry(state.CheckId, state.CustomerId, state.Id, newStateID)
 		if err != nil {
 			logger.WithError(err).Error("Error creating StateTransitionLogEntry")
 		}
