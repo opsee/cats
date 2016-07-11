@@ -87,8 +87,10 @@ func TestExistingState(t *testing.T) {
 		TimeEntered: time.Now(),
 		LastUpdated: time.Now(),
 	}
+	
+	checkStore := store.NewCheckStore(db)
 
-	err := store.PutState(db, state)
+	err := checkStore.PutState(state)
 	assert.Nil(t, err)
 
 	wrkr := NewCheckWorker(db, result)
@@ -97,7 +99,8 @@ func TestExistingState(t *testing.T) {
 
 	tx, err := db.Beginx()
 	assert.Nil(t, err)
-	state, err = store.GetAndLockState(tx, result.CustomerId, result.CheckId)
+	checkStore = store.NewCheckStore(tx)
+	state, err = checkStore.GetAndLockState(result.CustomerId, result.CheckId)
 	assert.Nil(t, err)
 	assert.NotNil(t, state)
 	assert.Equal(t, "FAIL_WAIT", state.State)

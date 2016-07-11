@@ -16,6 +16,8 @@ func TestTransactionIsolation(t *testing.T) {
 	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
 	assert.Nil(t, err)
 
+	checkStore := NewCheckStore(db)
+
 	// First we make sure we have memos and state.
 	state := &checks.State{
 		CheckId:     "check-id",
@@ -25,10 +27,10 @@ func TestTransactionIsolation(t *testing.T) {
 		TimeEntered: time.Now(),
 		LastUpdated: time.Now(),
 	}
-	err = PutState(db, state)
+	err = checkStore.PutState(state)
 	assert.Nil(t, err)
 
-	err = PutMemo(db, &checks.ResultMemo{
+	err = checkStore.PutMemo(&checks.ResultMemo{
 		BastionId:     "61f25e94-4f6e-11e5-a99f-4771161a3518",
 		CustomerId:    "11111111-1111-1111-1111-111111111111",
 		CheckId:       "check-id",
@@ -37,7 +39,7 @@ func TestTransactionIsolation(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	err = PutMemo(db, &checks.ResultMemo{
+	err = checkStore.PutMemo(&checks.ResultMemo{
 		BastionId:     "61f25e94-4f6e-11e5-a99f-4771161a3517",
 		CustomerId:    "11111111-1111-1111-1111-111111111111",
 		CheckId:       "check-id",
@@ -57,11 +59,13 @@ func TestTransactionIsolation(t *testing.T) {
 		tx, err := db.Beginx()
 		assert.Nil(t, err)
 
-		state, err = GetAndLockState(tx, "11111111-1111-1111-1111-111111111111", "check-id")
+		checkStore := NewCheckStore(tx)
+
+		state, err = checkStore.GetAndLockState("11111111-1111-1111-1111-111111111111", "check-id")
 		assert.Nil(t, err)
 		assert.NotNil(t, state)
 
-		err = PutMemo(tx, &checks.ResultMemo{
+		err = checkStore.PutMemo(&checks.ResultMemo{
 			BastionId:     bastionId,
 			CustomerId:    "11111111-1111-1111-1111-111111111111",
 			CheckId:       "check-id",
@@ -70,9 +74,9 @@ func TestTransactionIsolation(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		assert.Nil(t, UpdateState(tx, state))
+		assert.Nil(t, checkStore.UpdateState(state))
 		assert.Nil(t, state.Transition(nil))
-		assert.Nil(t, PutState(tx, state))
+		assert.Nil(t, checkStore.PutState(state))
 		tx.Commit()
 	}
 	wg := &sync.WaitGroup{}
@@ -84,8 +88,10 @@ func TestTransactionIsolation(t *testing.T) {
 
 	tx, err := db.Beginx()
 	assert.Nil(t, err)
+	checkStore = NewCheckStore(tx)
+
 	defer tx.Rollback()
-	state, err = GetAndLockState(tx, "11111111-1111-1111-1111-111111111111", "check-id")
+	state, err = checkStore.GetAndLockState("11111111-1111-1111-1111-111111111111", "check-id")
 	assert.Nil(t, err)
 	assert.NotNil(t, state)
 	assert.Equal(t, int32(4), state.FailingCount)

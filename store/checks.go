@@ -9,10 +9,18 @@ import (
 	"github.com/opsee/cats/checks"
 )
 
+type checkStore struct {
+	sqlx.Ext
+}
+
+func NewCheckStore(q sqlx.Ext) CheckStore {
+	return &checkStore{q}
+}
+
 // GetState creates a State object populated by the check's settings and
 // by the current state if it exists. If it the state is unknown, then it
 // assumes a present state of OK.
-func GetAndLockState(q sqlx.Ext, customerId, checkId string) (*checks.State, error) {
+func (q *checkStore) GetAndLockState(customerId, checkId string) (*checks.State, error) {
 	state := &checks.State{}
 	err := sqlx.Get(q, state, "SELECT states.state_id, states.customer_id, states.check_id, states.state_name, states.time_entered, states.last_updated, checks.min_failing_count, checks.min_failing_time, states.failing_count, states.response_count FROM check_states AS states JOIN checks ON (checks.id = states.check_id) WHERE states.customer_id = $1 AND checks.id = $2 AND checks.deleted = false FOR UPDATE OF states", customerId, checkId)
 	if err != nil && err != sql.ErrNoRows {
@@ -47,7 +55,7 @@ func GetAndLockState(q sqlx.Ext, customerId, checkId string) (*checks.State, err
 	return state, nil
 }
 
-func UpdateState(q sqlx.Ext, state *checks.State) error {
+func (q *checkStore) UpdateState(state *checks.State) error {
 	row := q.QueryRowx("SELECT sum(failing_count), sum(response_count) FROM check_state_memos WHERE check_id=$1 AND customer_id=$2", state.CheckId, state.CustomerId)
 	if err := row.Err(); err != nil {
 		return err
@@ -60,7 +68,7 @@ func UpdateState(q sqlx.Ext, state *checks.State) error {
 	return nil
 }
 
-func PutState(q sqlx.Ext, state *checks.State) error {
+func (q *checkStore) PutState(state *checks.State) error {
 	_, err := sqlx.NamedExec(q, "INSERT INTO check_states (check_id, customer_id, state_id, state_name, time_entered, last_updated, failing_count, response_count) VALUES (:check_id, :customer_id, :state_id, :state_name, :time_entered, :last_updated, :failing_count, :response_count) ON CONFLICT (check_id) DO UPDATE SET state_id = :state_id, state_name = :state_name, time_entered = :time_entered, last_updated = :last_updated, failing_count = :failing_count, response_count = :response_count", state)
 	if err != nil {
 		return err
@@ -69,7 +77,7 @@ func PutState(q sqlx.Ext, state *checks.State) error {
 	return nil
 }
 
-func PutMemo(q sqlx.Ext, memo *checks.ResultMemo) error {
+func (q *checkStore) PutMemo(memo *checks.ResultMemo) error {
 	_, err := sqlx.NamedExec(q, "INSERT INTO check_state_memos AS csm (check_id, customer_id, bastion_id, failing_count, response_count, last_updated) VALUES (:check_id, :customer_id, :bastion_id, :failing_count, :response_count, :last_updated) ON CONFLICT (check_id, bastion_id) DO UPDATE SET failing_count = :failing_count, response_count = :response_count, last_updated = :last_updated WHERE csm.check_id = :check_id AND csm.bastion_id = :bastion_id", memo)
 	if err != nil {
 		return err
@@ -78,7 +86,7 @@ func PutMemo(q sqlx.Ext, memo *checks.ResultMemo) error {
 	return nil
 }
 
-func GetMemo(q sqlx.Ext, checkId, bastionId string) (*checks.ResultMemo, error) {
+func (q *checkStore) GetMemo(checkId, bastionId string) (*checks.ResultMemo, error) {
 	memo := &checks.ResultMemo{}
 	err := sqlx.Get(q, memo, "SELECT * FROM check_state_memos WHERE check_id = $1 AND bastion_id = $2 LIMIT 1", checkId, bastionId)
 	if err != nil {
@@ -90,7 +98,7 @@ func GetMemo(q sqlx.Ext, checkId, bastionId string) (*checks.ResultMemo, error) 
 
 // CreateStateTransitionLogEntry creates and stores a StateTransitionLogEntry, returning the created
 // log entry or an error.
-func CreateStateTransitionLogEntry(q sqlx.Ext, checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error) {
+func (q *checkStore) CreateStateTransitionLogEntry(checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error) {
 	var logEntryID int
 	err := q.QueryRowx("INSERT INTO check_state_transitions (check_id, customer_id, from_state, to_state) VALUES ($1, $2, $3, $4) RETURNING id", checkId, customerId, fromState, toState).Scan(&logEntryID)
 	if err != nil {
@@ -104,4 +112,8 @@ func CreateStateTransitionLogEntry(q sqlx.Ext, checkId, customerId string, fromS
 	}
 
 	return logEntry, nil
+}
+
+func (q *checkStore) GetCheckCount(user *schema.User, prorated bool) (float32, error) {
+	return float32(0), nil
 }

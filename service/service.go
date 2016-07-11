@@ -14,17 +14,19 @@ import (
 )
 
 type service struct {
-	db store.Store
+	checkStore store.CheckStore
 }
 
 func New(pgConn string) (*service, error) {
-	svc := new(service)
 	db, err := store.NewPostgres(pgConn)
 	if err != nil {
 		return nil, err
 	}
 
-	svc.db = db
+	svc := &service{
+		checkStore: store.NewCheckStore(db),
+	}
+
 	return svc, nil
 }
 

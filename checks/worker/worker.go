@@ -66,7 +66,9 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 		return nil, err
 	}
 
-	memo, err := store.GetMemo(tx, w.result.CheckId, w.result.BastionId)
+	checkStore := store.NewCheckStore(tx)
+
+	memo, err := checkStore.GetMemo(w.result.CheckId, w.result.BastionId)
 	if err != nil && err != sql.ErrNoRows {
 		logger.WithError(err).Error("Unable to get check state memo from DB.")
 		rollback(logger, tx)
@@ -90,14 +92,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	memo.ResponseCount = len(w.result.Responses)
 	memo.LastUpdated = resultTimestamp
 
-	if err := store.PutMemo(tx, memo); err != nil {
-		logger.WithError(err).Error("Error putting check state memo.")
-		rollback(logger, tx)
-		return nil, err
-	}
-	logger.Debug("Put memo: ", memo)
-
-	state, err := store.GetAndLockState(tx, w.result.CustomerId, w.result.CheckId)
+	state, err := checkStore.GetAndLockState(w.result.CustomerId, w.result.CheckId)
 	if err != nil {
 		logger.WithError(err).Error("Error getting state.")
 		rollback(logger, tx)
@@ -112,7 +107,14 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	}
 	logger.Debug("Got state: ", state)
 
-	if err := store.UpdateState(tx, state); err != nil {
+	if err := checkStore.PutMemo(memo); err != nil {
+		logger.WithError(err).Error("Error putting check state memo.")
+		rollback(logger, tx)
+		return nil, err
+	}
+	logger.Debug("Put memo: ", memo)
+
+	if err := checkStore.UpdateState(state); err != nil {
 		logger.WithError(err).Error("Error updating state from DB.")
 		rollback(logger, tx)
 		return nil, err
@@ -126,7 +128,7 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	}
 	logger.Debug("State after transition: ", state)
 
-	if err := store.PutState(tx, state); err != nil {
+	if err := checkStore.PutState(state); err != nil {
 		logger.WithError(err).Error("Error storing state.")
 		rollback(logger, tx)
 		return nil, err
