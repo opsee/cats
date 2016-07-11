@@ -92,13 +92,6 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 	memo.ResponseCount = len(w.result.Responses)
 	memo.LastUpdated = resultTimestamp
 
-	if err := checkStore.PutMemo(memo); err != nil {
-		logger.WithError(err).Error("Error putting check state memo.")
-		rollback(logger, tx)
-		return nil, err
-	}
-	logger.Debug("Put memo: ", memo)
-
 	state, err := checkStore.GetAndLockState(w.result.CustomerId, w.result.CheckId)
 	if err != nil {
 		logger.WithError(err).Error("Error getting state.")
@@ -113,6 +106,13 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 		return nil, err
 	}
 	logger.Debug("Got state: ", state)
+
+	if err := checkStore.PutMemo(memo); err != nil {
+		logger.WithError(err).Error("Error putting check state memo.")
+		rollback(logger, tx)
+		return nil, err
+	}
+	logger.Debug("Put memo: ", memo)
 
 	if err := checkStore.UpdateState(state); err != nil {
 		logger.WithError(err).Error("Error updating state from DB.")
