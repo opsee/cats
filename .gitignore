@@ -36,3 +36,5 @@ _testmain.go
 /target/
 
 users.sql
+
+.terraform/
