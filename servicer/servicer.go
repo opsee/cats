@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/hoisie/mustache"
 	"github.com/keighl/mandrill"
+	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
@@ -18,6 +20,22 @@ import (
 
 type MandrillMailer interface {
 	MessagesSendTemplate(*mandrill.Message, string, interface{}) ([]*mandrill.Response, error)
+}
+
+// 0111b -- TODO(dan) AllPerms(permset) (uint64, error) in basic
+const AllUserPerms = uint64(0x7)
+
+type Signup struct {
+	Id         int               `json:"id"`
+	Email      string            `json:"email"`
+	Name       string            `json:"name"`
+	Claimed    bool              `json:"claimed"`
+	Activated  bool              `json:"activated"`
+	Referrer   string            `json:"referrer"`
+	CreatedAt  time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at" db:"updated_at"`
+	CustomerId string            `json:"-" db:"customer_id"`
+	Perms      *schema.UserFlags `json:"-" db:"perms"`
 }
 
 var (

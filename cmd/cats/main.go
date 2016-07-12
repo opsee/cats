@@ -5,6 +5,7 @@ import (
 
 	"github.com/opsee/cats/service"
 	"github.com/opsee/cats/servicer"
+	vapestore "github.com/opsee/cats/servicer/store"
 	log "github.com/opsee/logrus"
 	"github.com/opsee/vaper"
 	"github.com/spf13/viper"
@@ -26,7 +27,8 @@ func main() {
 	}
 	vaper.Init(key)
 
-	// initialize the user servicer TODO(mark): deprecate this
+	// initialize the user servicer and store TODO(mark): deprecate this
+	vapestore.Init(viper.GetString("postgres_conn"))
 	servicer.Init(servicer.Config{
 		Host:        viper.GetString("opsee_host"),
 		MandrillKey: viper.GetString("mandrill_key"),

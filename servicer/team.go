@@ -3,7 +3,7 @@ package servicer
 import (
 	"github.com/opsee/basic/schema"
 	log "github.com/opsee/logrus"
-	"github.com/opsee/vape/store"
+	"github.com/opsee/cats/servicer/store"
 )
 
 func MergeTeam(team *schema.Team, name, subscription string) error {
