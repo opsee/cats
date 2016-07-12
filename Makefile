@@ -1,5 +1,6 @@
+ENVIRONMENT ?= test
 PROJECT := cats
-APPENV := testenv
+APPENV := $(ENVIRONMENT)env
 GITCOMMIT := $(shell git rev-parse --short HEAD)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
@@ -45,5 +46,11 @@ run: build $(APPENV)
 
 push:
 	docker push quay.io/opsee/$(PROJECT):$(GITCOMMIT)
+
+deploy-plan: terraform
+	$(MAKE) -C terraform $(ENVIRONMENT)-plan
+
+deploy:
+	$(MAKE) -C terraform $(ENVIRONMENT)-apply
 
 .PHONY: build run migrate all push
