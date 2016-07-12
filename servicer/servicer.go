@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"net/url"
+	"time"
 
 	"github.com/hoisie/mustache"
 	"github.com/keighl/mandrill"
+	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
@@ -19,6 +20,22 @@ import (
 
 type MandrillMailer interface {
 	MessagesSendTemplate(*mandrill.Message, string, interface{}) ([]*mandrill.Response, error)
+}
+
+// 0111b -- TODO(dan) AllPerms(permset) (uint64, error) in basic
+const AllUserPerms = uint64(0x7)
+
+type Signup struct {
+	Id         int               `json:"id"`
+	Email      string            `json:"email"`
+	Name       string            `json:"name"`
+	Claimed    bool              `json:"claimed"`
+	Activated  bool              `json:"activated"`
+	Referrer   string            `json:"referrer"`
+	CreatedAt  time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at" db:"updated_at"`
+	CustomerId string            `json:"-" db:"customer_id"`
+	Perms      *schema.UserFlags `json:"-" db:"perms"`
 }
 
 var (
@@ -44,19 +61,28 @@ func init() {
 	slackTemplates["new-signup"] = tmpl
 }
 
-func Init(host string, mailer MandrillMailer, intercom, closeioKey, slackUrl, inviteSlackDomain, inviteSlackAdminToken, spanxHost string) error {
-	opseeHost = host
-	mailClient = mailer
-	intercomKey = []byte(intercom)
-	slackEndpoint = slackUrl
-	slackDomain = inviteSlackDomain
-	slackAdminToken = inviteSlackAdminToken
+type Config struct {
+	Host        string
+	MandrillKey string
+	IntercomKey string
+	CloseIOKey  string
+	SlackUrl    string
+}
 
-	if closeioKey != "" {
-		closeioClient = closeio.New(closeioKey)
+func Init(config Config) error {
+	opseeHost = config.Host
+	intercomKey = []byte(config.IntercomKey)
+	slackEndpoint = config.SlackUrl
+
+	if config.MandrillKey != "" {
+		mailClient = mandrill.ClientWithKey(config.MandrillKey)
 	}
 
-	conn, err := grpc.Dial(spanxHost, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	if config.CloseIOKey != "" {
+		closeioClient = closeio.New(config.CloseIOKey)
+	}
+
+	conn, err := grpc.Dial("spanx.in.opsee.com:8443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {
 		return err
 	}
@@ -117,28 +143,4 @@ func notifySlack(name string, vars map[string]interface{}) {
 
 	defer resp.Body.Close()
 	log.WithField("status", resp.StatusCode).Info("sent slack request")
-}
-
-func inviteSlack(name, email string) {
-	if slackDomain == "" || slackAdminToken == "" {
-		log.Warn("not inviting user to the opsee support slack")
-		return
-	}
-
-	log.Info("inviting user to the opsee support slack")
-
-	v := url.Values{}
-	v.Set("email", email)
-	v.Set("token", slackAdminToken)
-	v.Set("set_active", "true")
-	v.Set("extra_message", fmt.Sprintf(`Thanks for signing up for Opsee, %s. If you use Slack, you can chat with our engineering and support teams any time in the opsee-support Slack team.`, name))
-
-	resp, err := http.PostForm(fmt.Sprintf("https://%s/api/users.admin.invite", slackDomain), v)
-	if err != nil {
-		log.WithError(err).Errorf("failed to send slack invitation to: %s", email)
-		return
-	}
-
-	defer resp.Body.Close()
-	log.Infof("slack invitation sent to %s", email)
 }

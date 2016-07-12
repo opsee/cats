@@ -7,14 +7,13 @@ import (
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
-	"github.com/opsee/vape/model"
-	"github.com/opsee/vape/store"
+	"github.com/opsee/cats/servicer/store"
 	"github.com/snorecone/closeio-go"
 	"golang.org/x/net/context"
 )
 
-func GetSignupsByCustomerId(id string) ([]*model.Signup, error) {
-	var signups []*model.Signup
+func GetSignupsByCustomerId(id string) ([]*Signup, error) {
+	var signups []*Signup
 	err := store.Select(&signups, "signups-by-customer-id", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -27,8 +26,8 @@ func GetSignupsByCustomerId(id string) ([]*model.Signup, error) {
 	return signups, nil
 }
 
-func GetSignup(id int) (*model.Signup, error) {
-	signup := new(model.Signup)
+func GetSignup(id int) (*Signup, error) {
+	signup := new(Signup)
 	err := store.Get(signup, "signup-by-id", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -54,7 +53,7 @@ func DeleteSignup(id int) error {
 	return nil
 }
 
-func CreateActiveSignup(email, name, referrer string) (*model.Signup, error) {
+func CreateActiveSignup(email, name, referrer string) (*Signup, error) {
 	signup, err := createSignup("", email, name, referrer, true, &schema.UserFlags{Admin: true, Billing: true, Edit: true})
 	if err != nil {
 		return nil, err
@@ -108,8 +107,8 @@ func CreateActiveSignup(email, name, referrer string) (*model.Signup, error) {
 	return signup, err
 }
 
-func createSignup(customerId, email, name, referrer string, activated bool, perms *schema.UserFlags) (*model.Signup, error) {
-	existingSignup := new(model.Signup)
+func createSignup(customerId, email, name, referrer string, activated bool, perms *schema.UserFlags) (*Signup, error) {
+	existingSignup := new(Signup)
 	err := store.Get(existingSignup, "signup-by-email", email)
 	if err == nil {
 		return existingSignup, SignupExists
@@ -121,7 +120,7 @@ func createSignup(customerId, email, name, referrer string, activated bool, perm
 		name = "default"
 	}
 
-	signup := &model.Signup{
+	signup := &Signup{
 		Email:      email,
 		Name:       name,
 		Referrer:   referrer,
@@ -145,7 +144,7 @@ func createSignup(customerId, email, name, referrer string, activated bool, perm
 	return signup, err
 }
 
-func ActivateSignup(id int) (*model.Signup, error) {
+func ActivateSignup(id int) (*Signup, error) {
 	signup, err := GetSignup(id)
 	if err != nil {
 		return nil, err
@@ -169,7 +168,7 @@ func ActivateSignup(id int) (*model.Signup, error) {
 	return signup, nil
 }
 
-func ListSignups(perPage int, page int) ([]*model.Signup, error) {
+func ListSignups(perPage int, page int) ([]*Signup, error) {
 	if perPage < 1 {
 		perPage = 20
 	}
@@ -181,7 +180,7 @@ func ListSignups(perPage int, page int) ([]*model.Signup, error) {
 	limit := perPage
 	offset := (perPage * page) - perPage
 
-	signups := []*model.Signup{}
+	signups := []*Signup{}
 	err := store.Select(&signups, "list-signups", limit, offset)
 	if err != nil {
 		return nil, err

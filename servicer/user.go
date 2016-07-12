@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/opsee/basic/schema"
-	"github.com/opsee/vape/store"
+	"github.com/opsee/cats/servicer/store"
 	"github.com/opsee/vaper"
 	"github.com/snorecone/closeio-go"
 	"golang.org/x/crypto/bcrypt"

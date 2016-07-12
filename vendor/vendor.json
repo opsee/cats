@@ -363,12 +363,6 @@
 			"revisionTime": "2016-06-28T15:01:51-07:00"
 		},
 		{
-			"checksumSHA1": "f62XVj7So29WO/HJC6znxHbbeTs=",
-			"path": "github.com/graphql-go/graphql/language/typeInfo",
-			"revision": "a5cf5f205dfd1cec7d9c7a5e94f5f2084faf47bc",
-			"revisionTime": "2016-05-30T01:52:47Z"
-		},
-		{
 			"checksumSHA1": "XdbaPA0GmDwkGW6IepvL/pvMrXE=",
 			"origin": "github.com/opsee/basic/vendor/github.com/graphql-go/graphql/language/visitor",
 			"path": "github.com/graphql-go/graphql/language/visitor",
@@ -616,12 +610,6 @@
 			"revisionTime": "2016-05-19T09:39:33-07:00"
 		},
 		{
-			"checksumSHA1": "6OiNh2QDv2XAXkmApcr4LTpiAKk=",
-			"path": "github.com/opsee/pracovnik/results",
-			"revision": "c4c5b00ec9b7318fb5c05dc5976f3485fe20f1ee",
-			"revisionTime": "2016-06-27T20:29:52Z"
-		},
-		{
 			"checksumSHA1": "Oc5/hmIbwL/aWBo72SigCzA82JE=",
 			"origin": "github.com/opsee/basic/vendor/github.com/opsee/protobuf/opseeproto",
 			"path": "github.com/opsee/protobuf/opseeproto",
@@ -641,24 +629,6 @@
 			"path": "github.com/opsee/protobuf/plugin/graphql/scalars",
 			"revision": "242a5ff11a379ac3c9e6e481201b34057822565f",
 			"revisionTime": "2016-06-28T15:01:51-07:00"
-		},
-		{
-			"checksumSHA1": "3gitkCEPDWT4peNiPZR5ebDiltw=",
-			"path": "github.com/opsee/vape/model",
-			"revision": "2302179e5d717129a7a1f1d2a802dbd3f23ab295",
-			"revisionTime": "2016-07-08T15:28:54-07:00"
-		},
-		{
-			"checksumSHA1": "E2oGQHFS4URge/y0A6wZ+7vuZqw=",
-			"path": "github.com/opsee/vape/store",
-			"revision": "2302179e5d717129a7a1f1d2a802dbd3f23ab295",
-			"revisionTime": "2016-07-08T15:28:54-07:00"
-		},
-		{
-			"checksumSHA1": "TLkyVQM2vHBUMS52KjnyXukI8cQ=",
-			"path": "github.com/opsee/vape/testutil",
-			"revision": "2302179e5d717129a7a1f1d2a802dbd3f23ab295",
-			"revisionTime": "2016-07-08T15:28:54-07:00"
 		},
 		{
 			"checksumSHA1": "Hqn9bX1B1dMlG4p6WQcwAD+W2g8=",
@@ -875,12 +845,6 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "a0ff1e78a98cd140c2d18a0210ab0a2a183a2b4c",
 			"revisionTime": "2016-06-30T15:10:19-07:00"
-		},
-		{
-			"checksumSHA1": "I2d7Kn572Fz02mnnlcI4MHXCu0c=",
-			"path": "gopkg.in/check.v1",
-			"revision": "4f90aeace3a26ad7021961c297b22c42160c7b25",
-			"revisionTime": "2016-01-05T14:49:36-02:00"
 		},
 		{
 			"checksumSHA1": "+OHJtZ4Y1scZvzLG8nF+LhYMGe0=",
