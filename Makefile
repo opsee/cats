@@ -50,7 +50,7 @@ push:
 deploy-plan: terraform
 	TF_VAR_image_version=$(GITCOMMIT) $(MAKE) -C terraform $(ENVIRONMENT)-plan
 
-deploy:
+deploy: deploy-plan
 	$(MAKE) -C terraform $(ENVIRONMENT)-apply
 
 .PHONY: build run migrate all push
