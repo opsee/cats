@@ -130,17 +130,17 @@ func main() {
 			return err
 		}
 
-		logger := log.WithFields(log.Fields{
-			"customer_id": result.CustomerId,
-			"check_id":    result.CheckId,
-			"bastion_id":  result.BastionId,
-		})
-
 		// TODO(greg): CheckResult objects should probably have a validator.
 		if result.CustomerId == "" || result.CheckId == "" {
 			logger.Error("Received invalid check result.")
 			return nil
 		}
+
+		logger := log.WithFields(log.Fields{
+			"customer_id": result.CustomerId,
+			"check_id":    result.CheckId,
+			"bastion_id":  result.BastionId,
+		})
 
 		// TODO(greg): Once all bastions have been upgraded to include Bastion ID in
 		// their check results, everything in this block can be deleted.
@@ -203,14 +203,18 @@ func main() {
 
 	checks.AddHook(func(newStateID checks.StateId, state *checks.State, result *schema.CheckResult) {
 		logger := log.WithFields(log.Fields{
-			"customer_id":       state.CustomerId,
-			"check_id":          state.CheckId,
-			"min_failing_count": state.MinFailingCount,
-			"min_failing_time":  state.MinFailingTime,
-			"failing_count":     state.FailingCount,
-			"failing_time_s":    state.TimeInState().Seconds(),
-			"old_state":         state.State,
-			"new_state":         newStateID.String(),
+			"customer_id":           state.CustomerId,
+			"check_id":              state.CheckId,
+			"min_failing_count":     state.MinFailingCount,
+			"min_failing_time":      state.MinFailingTime,
+			"failing_count":         state.FailingCount,
+			"failing_time_s":        state.TimeInState().Seconds(),
+			"old_state":             state.State,
+			"new_state":             newStateID.String(),
+			"result.response_count": len(result.Responses),
+			"result.passing":        result.Passing,
+			"result.failing_count":  result.FailingCount(),
+			"result.timestamp":      result.Timestamp.String(),
 		})
 
 		checkStore := store.NewCheckStore(db)

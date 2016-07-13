@@ -48,7 +48,7 @@ push:
 	docker push quay.io/opsee/$(PROJECT):$(GITCOMMIT)
 
 deploy-plan: terraform
-	$(MAKE) -C terraform $(ENVIRONMENT)-plan
+	TF_VAR_image_version=$(GITCOMMIT) $(MAKE) -C terraform $(ENVIRONMENT)-plan
 
 deploy:
 	$(MAKE) -C terraform $(ENVIRONMENT)-apply

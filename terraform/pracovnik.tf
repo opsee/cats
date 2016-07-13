@@ -1,7 +1,3 @@
-variable "pracovnik_image_version" {
-    type = "string"
-}
-
 resource "aws_s3_bucket" "results" {
     bucket = "${format("opsee-results-%s", var.environment)}"
     acl = "private"
@@ -16,11 +12,11 @@ resource "template_file" "pracovnik_containers" {
     template = "${file("container-definitions/pracovnik.json.tmpl")}"
 
     vars {
-        version = "${var.pracovnik_image_version}"
+        version = "${var.image_version}"
         s3_bucket = "${aws_s3_bucket.results.id}"
         appenv = "${format("catsenv-%s-us-west-2", var.environment)}"
         syslog_address = "${var.syslog_address}"
-        syslog_tag = "${format("pracovnik-%s", var.pracovnik_image_version)}"
+        syslog_tag = "${format("pracovnik-%s", var.image_version)}"
     }
 }
 
