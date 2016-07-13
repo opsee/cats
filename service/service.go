@@ -15,6 +15,7 @@ import (
 
 type service struct {
 	checkStore store.CheckStore
+	teamStore  store.TeamStore
 }
 
 func New(pgConn string) (*service, error) {
@@ -25,6 +26,7 @@ func New(pgConn string) (*service, error) {
 
 	svc := &service{
 		checkStore: store.NewCheckStore(db),
+		teamStore:  store.NewTeamStore(db),
 	}
 
 	return svc, nil
