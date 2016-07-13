@@ -130,17 +130,17 @@ func main() {
 			return err
 		}
 
-		// TODO(greg): CheckResult objects should probably have a validator.
-		if result.CustomerId == "" || result.CheckId == "" {
-			logger.Error("Received invalid check result.")
-			return nil
-		}
-
 		logger := log.WithFields(log.Fields{
 			"customer_id": result.CustomerId,
 			"check_id":    result.CheckId,
 			"bastion_id":  result.BastionId,
 		})
+
+		// TODO(greg): CheckResult objects should probably have a validator.
+		if result.CustomerId == "" || result.CheckId == "" {
+			logger.Error("Received invalid check result.")
+			return nil
+		}
 
 		// TODO(greg): Once all bastions have been upgraded to include Bastion ID in
 		// their check results, everything in this block can be deleted.
