@@ -48,7 +48,7 @@ func TestTeamUpdate(t *testing.T) {
 		assert.NoError(err)
 		assert.Equal("money", team.Name)
 		assert.Equal("team", team.Subscription)
-		assert.Equal(5, team.SubscriptionQuantity)
+		assert.EqualValues(5, team.SubscriptionQuantity)
 	})
 }
 
