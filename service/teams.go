@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Fetches team, including users
+// Fetches team, including users and invites.
 func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opsee.GetTeamResponse, error) {
 	if req.Team == nil {
 		return nil, fmt.Errorf("invalid request, missing team")
@@ -24,7 +24,9 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 	}, nil
 }
 
-// Updates team name or subscription
+// Updates team name or subscription. This call will make a stripe API request inline if
+// the team subscription or subscription quantity is changed, or if a stripe credit card
+// token is present in the request.
 func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) (*opsee.UpdateTeamResponse, error) {
 	if req.Team == nil {
 		return nil, fmt.Errorf("invalid request, missing team")
@@ -57,7 +59,7 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 	// update other pertinent fields in the team (name i guess)
 	currentTeam.Name = req.Team.Name
 
-	err = s.teamStore.Upsert(currentTeam)
+	err = s.teamStore.Update(currentTeam)
 	if err != nil {
 		return nil, err
 	}
@@ -67,22 +69,32 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 	}, nil
 }
 
-// Sets team to inactive
+// Soft deletes a team and cancels their stripe subscription if present.
 func (s *service) DeleteTeam(ctx context.Context, req *opsee.DeleteTeamRequest) (*opsee.DeleteTeamResponse, error) {
 	if req.Team == nil {
 		return nil, fmt.Errorf("invalid request, missing team")
 	}
 
-	if err := req.Team.Validate(); err != nil {
+	if req.Team.Id == "" {
+		return nil, fmt.Errorf("invalid request, missing team id")
+	}
+
+	currentTeam, err := s.teamStore.Get(req.Team.Id)
+	if err != nil {
 		return nil, err
 	}
 
-	err := s.teamStore.Delete(req.Team)
+	err = subscriptions.Cancel(currentTeam)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.teamStore.Delete(currentTeam)
 	if err != nil {
 		return nil, err
 	}
 
 	return &opsee.DeleteTeamResponse{
-		Team: req.Team,
+		Team: currentTeam,
 	}, nil
 }

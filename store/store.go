@@ -21,7 +21,8 @@ type TeamStore interface {
 	Get(id string) (*schema.Team, error)
 	GetUsers(id string) ([]*schema.User, error)
 	GetInvites(id string) ([]*schema.User, error)
-	Upsert(team *schema.Team) error
+	Create(team *schema.Team) error
+	Update(team *schema.Team) error
 	Delete(team *schema.Team) error
 }
 

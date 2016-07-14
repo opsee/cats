@@ -17,7 +17,7 @@ func NewTeamStore(q sqlx.Ext) TeamStore {
 
 func (q *teamStore) Get(id string) (*schema.Team, error) {
 	team := new(schema.Team)
-	err := sqlx.Get(q, team, "select id, name, active, subscription, stripe_customer_id, stripe_subscription_id from customers where id = $1 and active = true", id)
+	err := sqlx.Get(q, team, "select id, name, subscription, stripe_customer_id, stripe_subscription_id from customers where id = $1 and active = true", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -92,15 +92,12 @@ func (q *teamStore) GetInvites(id string) ([]*schema.User, error) {
 	return users, nil
 }
 
-// UpsertTeam inserts a new team, or updates an existing team in the database,
-// and mutates the team pointer that is passed to it
-func (q *teamStore) Upsert(team *schema.Team) error {
+// Inserts a new team into the database, and mutates the team pointer to fill in the returned id.
+func (q *teamStore) Create(team *schema.Team) error {
 	rows, err := sqlx.NamedQuery(
 		q,
 		`insert into customers (name, active, subscription, stripe_customer_id, stripe_subscription_id, subscription_quantity)
-		values (:name, :active, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity) on conflict do update set
-		name = :name, active = :active, subscription = :subscription, stripe_customer_id = :stripe_customer_id, 
-		stripe_subscription_id = :stripe_subscription_id, subscription_quantity = :subscription_quantity where id = :id returning *`,
+		values (:name, true, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity) returning *`,
 		team,
 	)
 	if err != nil {
@@ -117,7 +114,31 @@ func (q *teamStore) Upsert(team *schema.Team) error {
 	return nil
 }
 
-// DeleteTeam deletes the team
+// Updates an existing team in the database,
+// and mutates the team pointer that is passed to it. Will return error if team is not active (soft-deleted).
+func (q *teamStore) Update(team *schema.Team) error {
+	rows, err := sqlx.NamedQuery(
+		q,
+		`update customers set
+		name = :name, subscription = :subscription, stripe_customer_id = :stripe_customer_id, 
+		stripe_subscription_id = :stripe_subscription_id, subscription_quantity = :subscription_quantity where id = :id and active = true returning *`,
+		team,
+	)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	err = rows.StructScan(team)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete deletes the team
 func (q *teamStore) Delete(team *schema.Team) error {
 	_, err := q.Exec("update customers set active = false where id = $1", team.Id)
 	if err != nil && err != sql.ErrNoRows {
