@@ -26,12 +26,12 @@ func (q *teamStore) Get(id string) (*schema.Team, error) {
 		return nil, err
 	}
 
-	users, err := q.GetTeamUsers(team.Id)
+	users, err := q.GetUsers(team.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	invites, err := q.GetTeamInvites(team.Id)
+	invites, err := q.GetInvites(team.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +97,10 @@ func (q *teamStore) GetInvites(id string) ([]*schema.User, error) {
 func (q *teamStore) Upsert(team *schema.Team) error {
 	rows, err := sqlx.NamedQuery(
 		q,
-		`insert into customers (name, active, subscription, stripe_customer_id, stripe_subscription_id)
-		values (:name, :active, :subscription, :stripe_customer_id, :stripe_subscription_id) on conflict do update set
+		`insert into customers (name, active, subscription, stripe_customer_id, stripe_subscription_id, subscription_quantity)
+		values (:name, :active, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity) on conflict do update set
 		name = :name, active = :active, subscription = :subscription, stripe_customer_id = :stripe_customer_id, 
-		stripe_subscription_id = :stripe_subscription_id where id = :id returning *`,
+		stripe_subscription_id = :stripe_subscription_id, subscription_quantity = :subscription_quantity where id = :id returning *`,
 		team,
 	)
 	if err != nil {

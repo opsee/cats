@@ -43,16 +43,28 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		return nil, fmt.Errorf("no team found")
 	}
 
-	// update subscription
-	err = subscriptions.Update(req.Team, req.User)
+	// update subscription if necessary
+	if currentTeam.Subscription != req.Team.Subscription || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "" {
+		currentTeam.Subscription = req.Team.Subscription
+		currentTeam.SubscriptionQuantity = req.Team.SubscriptionQuantity
+
+		err = subscriptions.Update(currentTeam, req.StripeToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// update other pertinent fields in the team (name i guess)
+	currentTeam.Name = req.Team.Name
+
+	err = s.teamStore.Upsert(currentTeam)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := servicer.UpdateTeam(req.Team, req.Team.Name, req.Team.Subscription)
 	return &opsee.UpdateTeamResponse{
-		Team: t,
-	}, err
+		Team: currentTeam,
+	}, nil
 }
 
 // Sets team to inactive
@@ -61,7 +73,11 @@ func (s *service) DeleteTeam(ctx context.Context, req *opsee.DeleteTeamRequest) 
 		return nil, fmt.Errorf("invalid request, missing team")
 	}
 
-	err := s.teamStore.Delete(req.Team.Id)
+	if err := req.Team.Validate(); err != nil {
+		return nil, err
+	}
+
+	err := s.teamStore.Delete(req.Team)
 	if err != nil {
 		return nil, err
 	}
