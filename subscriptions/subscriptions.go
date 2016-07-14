@@ -13,13 +13,15 @@ import (
 type Plan string
 
 const (
-	BetaPlan      Plan = "beta"
+	FreePlan      Plan = "free"
+	BetaPlan           = "beta"
 	DeveloperPlan      = "developer"
 	TeamPlan           = "team"
 )
 
 var (
 	Plans = []Plan{
+		FreePlan,
 		BetaPlan,
 		DeveloperPlan,
 		TeamPlan,

@@ -44,7 +44,7 @@ func (q *teamStore) Get(id string) (*schema.Team, error) {
 func (q *teamStore) GetUsers(id string) ([]*schema.User, error) {
 	var users []*schema.User
 
-	err := sqlx.Select(q, &users, "select * from users where customer_id = $1", id)
+	err := sqlx.Select(q, &users, "select * from users where customer_id = $1 and active = true", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return users, nil
@@ -97,7 +97,8 @@ func (q *teamStore) Create(team *schema.Team) error {
 	rows, err := sqlx.NamedQuery(
 		q,
 		`insert into customers (name, active, subscription, stripe_customer_id, stripe_subscription_id, subscription_quantity)
-		values (:name, true, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity) returning *`,
+		values (:name, true, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity)
+		returning id, name, subscription, stripe_customer_id, stripe_subscription_id`,
 		team,
 	)
 	if err != nil {
@@ -105,10 +106,11 @@ func (q *teamStore) Create(team *schema.Team) error {
 	}
 
 	defer rows.Close()
-
-	err = rows.StructScan(team)
-	if err != nil {
-		return err
+	for rows.Next() {
+		err = rows.StructScan(team)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -121,7 +123,8 @@ func (q *teamStore) Update(team *schema.Team) error {
 		q,
 		`update customers set
 		name = :name, subscription = :subscription, stripe_customer_id = :stripe_customer_id, 
-		stripe_subscription_id = :stripe_subscription_id, subscription_quantity = :subscription_quantity where id = :id and active = true returning *`,
+		stripe_subscription_id = :stripe_subscription_id, subscription_quantity = :subscription_quantity where id = :id and active = true
+		returning id, name, subscription, stripe_customer_id, stripe_subscription_id`,
 		team,
 	)
 	if err != nil {
@@ -129,10 +132,11 @@ func (q *teamStore) Update(team *schema.Team) error {
 	}
 
 	defer rows.Close()
-
-	err = rows.StructScan(team)
-	if err != nil {
-		return err
+	for rows.Next() {
+		err = rows.StructScan(team)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
