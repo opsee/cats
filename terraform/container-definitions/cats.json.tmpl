@@ -1,0 +1,25 @@
+[
+    {
+        "Name": "cats",
+        "Image": "quay.io/opsee/cats:${version}",
+        "Memory": 256,
+        "Essential": true,
+        "Command": ["/run.sh"],
+        "Environment": [
+            { "Name": "APPENV", "Value": "${appenv}" }
+        ],
+        "PortMappings": [{
+            "hostPort": 9105,
+            "containerPort": 9105,
+            "protocol": "tcp"
+        }],
+        "LogConfiguration": {
+            "LogDriver": "syslog",
+            "Options": {
+                "syslog-address": "${syslog_address}",
+                "tag": "${syslog_tag}",
+                "syslog-tls-skip-verify": "true"
+            }
+        }
+    }
+]
