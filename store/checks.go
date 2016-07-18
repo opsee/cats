@@ -101,8 +101,8 @@ func (q *checkStore) GetMemo(checkId, bastionId string) (*checks.ResultMemo, err
 // because in periods of time where we aren't processing results, this could cause us
 // to throw out results from "live" bastions.
 func (q *checkStore) GetLiveBastions(customerID, checkID string) (bastions []string, err error) {
-	memos := []*checks.ResultMemo{}
-	err = sqlx.Get(q, &memos, "SELECT * FROM check_state_memos WHERE check_id = $1 ORDER BY last_updated DESC", checkID)
+	var memos []*checks.ResultMemo
+	err = sqlx.Select(q, &memos, "SELECT * FROM check_state_memos WHERE check_id = $1 ORDER BY last_updated DESC", checkID)
 	if err != nil {
 		return bastions, err
 	}
