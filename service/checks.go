@@ -30,3 +30,7 @@ func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountReq
 		Count:    count,
 	}, nil
 }
+
+func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResultsRequest) (*opsee.GetCheckResultsResponse, error) {
+	return nil, nil
+}
