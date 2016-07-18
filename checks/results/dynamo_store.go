@@ -113,7 +113,7 @@ func (s *DynamoStore) GetResultByCheckId(bastionId, checkId string) (result *sch
 		"fn":       "GetResultsByCheckId",
 		"check_id": checkId,
 	})
-	resultId := fmt.Sprintf("%s:%s", result.CheckId, bastionId)
+	resultId := fmt.Sprintf("%s:%s", checkId, bastionId)
 
 	resultIdAv, err := dynamodbattribute.Marshal(resultId)
 	if err != nil {
