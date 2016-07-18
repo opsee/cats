@@ -58,7 +58,7 @@ func (q *teamStore) GetUsers(id string) ([]*schema.User, error) {
 
 func (q *teamStore) GetInvites(id string) ([]*schema.User, error) {
 	var (
-		invites []*Signup
+		invites []*schema.Invite
 		users   []*schema.User
 	)
 

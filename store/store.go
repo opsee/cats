@@ -1,8 +1,6 @@
 package store
 
 import (
-	"time"
-
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/checks"
 )
@@ -24,18 +22,4 @@ type TeamStore interface {
 	Create(team *schema.Team) error
 	Update(team *schema.Team) error
 	Delete(team *schema.Team) error
-}
-
-// TODO(mark): clean this up and move it
-type Signup struct {
-	Id         int               `json:"id"`
-	Email      string            `json:"email"`
-	Name       string            `json:"name"`
-	Claimed    bool              `json:"claimed"`
-	Activated  bool              `json:"activated"`
-	Referrer   string            `json:"referrer"`
-	CreatedAt  time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time         `json:"updated_at" db:"updated_at"`
-	CustomerId string            `json:"-" db:"customer_id"`
-	Perms      *schema.UserFlags `json:"-" db:"perms"`
 }

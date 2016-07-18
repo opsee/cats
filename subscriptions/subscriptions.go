@@ -15,8 +15,8 @@ type Plan string
 const (
 	FreePlan      Plan = "free"
 	BetaPlan           = "beta"
-	DeveloperPlan      = "developer"
-	TeamPlan           = "team"
+	DeveloperPlan      = "developer_monthly"
+	TeamPlan           = "team_monthly"
 )
 
 var (
@@ -113,7 +113,8 @@ func Update(team *schema.Team, tokenSource string) error {
 		params.Token = tokenSource
 	}
 
-	if _, err := sub.Update(team.StripeSubscriptionId, params); err != nil {
+	res, err := sub.Update(team.StripeSubscriptionId, params)
+	if err != nil {
 		return err
 	}
 
