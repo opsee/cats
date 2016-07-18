@@ -4,9 +4,13 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/opsee/basic/grpcutil"
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/basic/tp"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
@@ -14,7 +18,8 @@ import (
 )
 
 type service struct {
-	checkStore store.CheckStore
+	checkStore  store.CheckStore
+	resultStore *results.DynamoStore
 }
 
 func New(pgConn string) (*service, error) {
@@ -24,7 +29,8 @@ func New(pgConn string) (*service, error) {
 	}
 
 	svc := &service{
-		checkStore: store.NewCheckStore(db),
+		checkStore:  store.NewCheckStore(db),
+		resultStore: &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))},
 	}
 
 	return svc, nil

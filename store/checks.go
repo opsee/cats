@@ -96,6 +96,33 @@ func (q *checkStore) GetMemo(checkId, bastionId string) (*checks.ResultMemo, err
 	return memo, nil
 }
 
+// GetLiveBastions returns a list of bastions whose timestamps do not differ by
+// greater than 120 seconds. It's important not to simply look at NOW() - 120 seconds
+// because in periods of time where we aren't processing results, this could cause us
+// to throw out results from "live" bastions.
+func (q *checkStore) GetLiveBastions(customerID, checkID string) (bastions []string, err error) {
+	memos := []*checks.ResultMemo{}
+	err = sqlx.Get(q, &memos, "SELECT * FROM check_state_memos WHERE check_id = $1 ORDER BY last_updated DESC", checkID)
+	if err != nil {
+		return bastions, err
+	}
+	bastions = make([]string, 0, len(memos))
+	// The newest timestamp is the upper bound of our 120 second window. So in O(n) we can
+	// found our set of "live" bastions.
+	var (
+		lowerBound time.Time
+		bIdx       int
+	)
+	for _, m := range memos {
+		if m.LastUpdated.After(lowerBound) {
+			bIdx++
+			bastions = bastions[:bIdx]
+			bastions[bIdx-1] = m.BastionId
+		}
+	}
+	return bastions, nil
+}
+
 // CreateStateTransitionLogEntry creates and stores a StateTransitionLogEntry, returning the created
 // log entry or an error.
 func (q *checkStore) CreateStateTransitionLogEntry(checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error) {
