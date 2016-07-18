@@ -133,6 +133,7 @@ func (s *DynamoStore) GetResultByCheckId(bastionId, checkId string) (result *sch
 	}
 
 	dynamoCheckResult := resultGetItemResponse.Item
+	result = &schema.CheckResult{}
 	if err := dynamodbattribute.UnmarshalMap(dynamoCheckResult, result); err != nil {
 		logger.WithError(err).Error("Error unmarshalling check result from dynamodb")
 		return nil, err
