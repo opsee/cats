@@ -5,6 +5,6 @@ import (
 )
 
 type Store interface {
-	GetResultsByCheckId(string) ([]*schema.CheckResult, error)
-	PutResult(*schema.CheckResult) error
+	GetResultByCheckId(bastionId, customerId string) (*schema.CheckResult, error)
+	PutResult(result *schema.CheckResult) error
 }

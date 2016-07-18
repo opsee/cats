@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
@@ -31,6 +32,28 @@ func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountReq
 	}, nil
 }
 
-func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResultsRequest) (*opsee.GetCheckResultsResponse, error) {
-	return nil, nil
+func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResultsRequest) (response *opsee.GetCheckResultsResponse, err error) {
+	if req.CustomerId == "" {
+		return nil, fmt.Errorf("Request missing CustomerID")
+	}
+
+	if req.CheckId == "" {
+		return nil, fmt.Errorf("Request missing CheckID")
+	}
+
+	bastions, err := s.checkStore.GetLiveBastions(req.CustomerId, req.CheckId)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*schema.CheckResult, len(bastions))
+	for i, b := range bastions {
+		result, err := s.resultStore.GetResultByCheckId(b, req.CheckId)
+		if err != nil {
+			return nil, err
+		}
+
+		results[i] = result
+	}
+	return &opsee.GetCheckResultsResponse{results}, nil
 }
