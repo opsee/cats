@@ -155,6 +155,9 @@ func (s *DynamoStore) GetResultByCheckId(bastionId, checkId string) (result *sch
 			"response_id": responseId,
 		})
 		responseIdAv, err := dynamodbattribute.Marshal(responseId)
+		if err != nil {
+			return nil, err
+		}
 
 		responseGetItemResponse, err := s.DynaClient.GetItem(&dynamodb.GetItemInput{
 			TableName: aws.String(CheckResponseTableName),
@@ -185,6 +188,7 @@ func (s *DynamoStore) GetResultByCheckId(bastionId, checkId string) (result *sch
 		}
 		checkResponses[j] = checkResponse
 	}
+	result.Responses = checkResponses
 
 	return result, nil
 }
