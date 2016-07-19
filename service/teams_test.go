@@ -2,6 +2,7 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
@@ -52,6 +53,32 @@ func (q *testTeamStore) Update(team *schema.Team) error {
 func (q *testTeamStore) Delete(team *schema.Team) error {
 	q.curTeam = team
 	return nil
+}
+
+func TestCreateDeleteTeam(t *testing.T) {
+	assert := assert.New(t)
+	ts := &testTeamStore{}
+	s := &service{
+		teamStore: ts,
+	}
+
+	team := &schema.Team{
+		Name: "http://www.customink.com/team/bowling-team-names",
+	}
+
+	resp, err := s.CreateTeam(context.Background(), &opsee.CreateTeamRequest{
+		Requestor: &schema.User{
+			Email: "testin@opsee.com",
+		},
+		Team:     team,
+		TrialEnd: time.Now().Add(3 * 24 * time.Hour).Unix(),
+	})
+	assert.NoError(err)
+	assert.Equal("beta", resp.Team.SubscriptionPlan)
+	assert.EqualValues(0, resp.Team.SubscriptionQuantity)
+	assert.Equal("trialing", resp.Team.SubscriptionStatus)
+	assert.NotEmpty(resp.Team.StripeSubscriptionId)
+	assert.NotEmpty(resp.Team.StripeCustomerId)
 }
 
 func TestUpdateTeam(t *testing.T) {

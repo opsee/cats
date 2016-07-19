@@ -43,7 +43,7 @@ func (p Plan) Validate() error {
 // billing permissions. `tokenSource` is an optional string token that represents a payment
 // source. If supplied, it will be applied to the stripe customer as the payment source for the
 // subscription.
-func Create(team *schema.Team, email string, tokenSource string) error {
+func Create(team *schema.Team, email string, tokenSource string, trialEnd int64) error {
 	if err := Plan(team.SubscriptionPlan).Validate(); err != nil {
 		return err
 	}
@@ -52,6 +52,10 @@ func Create(team *schema.Team, email string, tokenSource string) error {
 		Email:    email,
 		Plan:     team.SubscriptionPlan,
 		Quantity: uint64(team.SubscriptionQuantity),
+	}
+
+	if trialEnd != 0 {
+		params.TrialEnd = trialEnd
 	}
 
 	if tokenSource != "" {

@@ -26,6 +26,49 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 	}, nil
 }
 
+// Creates a team. This call will also make a stripe API request to create a stripe customer / subscription,
+// and update the stripe subscription and customer id in the database.
+func (s *service) CreateTeam(ctx context.Context, req *opsee.CreateTeamRequest) (*opsee.CreateTeamResponse, error) {
+	team := req.Team
+
+	if team == nil {
+		return nil, fmt.Errorf("invalid request, missing team")
+	}
+
+	if err := team.Validate(); err != nil {
+		return nil, err
+	}
+
+	if req.Requestor == nil {
+		return nil, fmt.Errorf("invalid request, missing requestor")
+	}
+
+	if req.Requestor.Email == "" {
+		return nil, fmt.Errorf("invalid request, missing requestor email")
+	}
+
+	if team.SubscriptionPlan == "" {
+		team.SubscriptionPlan = "beta"
+	}
+
+	if err := s.teamStore.Create(team); err != nil {
+		return nil, err
+	}
+
+	if err := subscriptions.Create(team, req.Requestor.Email, req.StripeToken, req.TrialEnd); err != nil {
+		return nil, err
+	}
+
+	// update with stripe info
+	if err := s.teamStore.Update(team); err != nil {
+		return nil, err
+	}
+
+	return &opsee.CreateTeamResponse{
+		Team: team,
+	}, nil
+}
+
 // Updates team name or subscription. This call will make a stripe API request inline if
 // the team subscription or subscription quantity is changed, or if a stripe credit card
 // token is present in the request.
