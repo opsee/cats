@@ -203,14 +203,19 @@ func main() {
 
 	checks.AddHook(func(newStateID checks.StateId, state *checks.State, result *schema.CheckResult) {
 		logger := log.WithFields(log.Fields{
-			"customer_id":       state.CustomerId,
-			"check_id":          state.CheckId,
-			"min_failing_count": state.MinFailingCount,
-			"min_failing_time":  state.MinFailingTime,
-			"failing_count":     state.FailingCount,
-			"failing_time_s":    state.TimeInState().Seconds(),
-			"old_state":         state.State,
-			"new_state":         newStateID.String(),
+			"customer_id":           state.CustomerId,
+			"check_id":              state.CheckId,
+			"min_failing_count":     state.MinFailingCount,
+			"min_failing_time":      state.MinFailingTime,
+			"failing_count":         state.FailingCount,
+			"failing_time_s":        state.TimeInState().Seconds(),
+			"old_state":             state.Id.String(),
+			"new_state":             newStateID.String(),
+			"bastion_id":            result.BastionId,
+			"result.response_count": len(result.Responses),
+			"result.passing":        result.Passing,
+			"result.failing_count":  result.FailingCount(),
+			"result.timestamp":      result.Timestamp.String(),
 		})
 
 		checkStore := store.NewCheckStore(db)

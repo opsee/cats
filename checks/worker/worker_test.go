@@ -49,7 +49,7 @@ func (s *fakeStore) PutResult(result *schema.CheckResult) error {
 	return nil
 }
 
-func (s *fakeStore) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, error) {
+func (s *fakeStore) GetResultByCheckId(bastionId, checkId string) ([]*schema.CheckResult, error) {
 	if s.fail {
 		return nil, errors.New("")
 	}
@@ -87,7 +87,7 @@ func TestExistingState(t *testing.T) {
 		TimeEntered: time.Now(),
 		LastUpdated: time.Now(),
 	}
-	
+
 	checkStore := store.NewCheckStore(db)
 
 	err := checkStore.PutState(state)

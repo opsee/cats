@@ -50,12 +50,12 @@ package results
 import (
 	"fmt"
 
-	log "github.com/opsee/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/gogo/protobuf/proto"
 	"github.com/opsee/basic/schema"
+	log "github.com/opsee/logrus"
 	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -108,110 +108,89 @@ type DynamoStore struct {
 	DynaClient *dynamodb.DynamoDB
 }
 
-func (s *DynamoStore) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, error) {
+func (s *DynamoStore) GetResultByCheckId(bastionId, checkId string) (result *schema.CheckResult, err error) {
 	logger := log.WithFields(log.Fields{
 		"fn":       "GetResultsByCheckId",
 		"check_id": checkId,
 	})
-	checkIdAv, err := dynamodbattribute.Marshal(checkId)
+	resultId := fmt.Sprintf("%s:%s", checkId, bastionId)
+
+	resultIdAv, err := dynamodbattribute.Marshal(resultId)
 	if err != nil {
 		return nil, err
 	}
 
-	// First we must query check_results-index for the result_ids for that check.
-	params := &dynamodb.QueryInput{
-		TableName:              aws.String(CheckResultTableName),
-		IndexName:              aws.String(CheckResultCheckIdIndexName),
-		KeyConditionExpression: aws.String("check_id = :check_id"),
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":check_id": checkIdAv,
+	// Now we must call GetItem for that result_id
+	resultGetItemResponse, err := s.DynaClient.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(CheckResultTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"result_id": resultIdAv,
 		},
-	}
-
-	checkIndexResponse, err := s.DynaClient.Query(params)
+	})
 	if err != nil {
-		logger.WithError(err).Error("Error querying dynamodb check index.")
+		logger.WithError(err).Error("Error getting result item from dyanmodb")
 		return nil, err
 	}
 
-	results := make([]*schema.CheckResult, len(checkIndexResponse.Items))
-	for i, resultAvMap := range checkIndexResponse.Items {
+	dynamoCheckResult := resultGetItemResponse.Item
+	result = &schema.CheckResult{}
+	if err := dynamodbattribute.UnmarshalMap(dynamoCheckResult, result); err != nil {
+		logger.WithError(err).Error("Error unmarshalling check result from dynamodb")
+		return nil, err
+	}
+
+	responseIds := []string{}
+	err = dynamodbattribute.Unmarshal(dynamoCheckResult["responses"], &responseIds)
+	if err != nil {
+		logger.WithError(err).Error("Error unmarshalling response list from dynamodb")
+		return nil, err
+	}
+
+	checkResponses := make([]*schema.CheckResponse, len(responseIds))
+	for j, responseId := range responseIds {
 		logger := log.WithFields(log.Fields{
-			"fn":        "CheckResults",
-			"check_id":  checkId,
-			"result_id": aws.StringValue(resultAvMap["result_id"].S),
+			"fn":          "CheckResults",
+			"check_id":    checkId,
+			"result_id":   resultIdAv.S,
+			"response_id": responseId,
 		})
-		// Now we must call GetItem for that result_id
-		resultGetItemResponse, err := s.DynaClient.GetItem(&dynamodb.GetItemInput{
-			TableName: aws.String(CheckResultTableName),
+		responseIdAv, err := dynamodbattribute.Marshal(responseId)
+		if err != nil {
+			return nil, err
+		}
+
+		responseGetItemResponse, err := s.DynaClient.GetItem(&dynamodb.GetItemInput{
+			TableName: aws.String(CheckResponseTableName),
 			Key: map[string]*dynamodb.AttributeValue{
-				"result_id": resultAvMap["result_id"],
+				"response_id": responseIdAv,
 			},
 		})
 		if err != nil {
-			logger.WithError(err).Error("Error getting result item from dyanmodb")
+			logger.WithError(err).Error("Error getting response item from dynamodb.")
 			return nil, err
 		}
 
-		dynamoCheckResult := resultGetItemResponse.Item
-		result := &schema.CheckResult{}
-		if err := dynamodbattribute.UnmarshalMap(dynamoCheckResult, result); err != nil {
-			logger.WithError(err).Error("Error unmarshalling check result from dynamodb")
+		checkResponse := &schema.CheckResponse{}
+		responseProtoAv, ok := responseGetItemResponse.Item["response_protobuf"]
+		if !ok {
+			err := fmt.Errorf("Response in dynamodb had no response object.")
+			logger.WithError(err).Error("Empty response protobuf in dynamodb.")
 			return nil, err
 		}
-
-		responseIds := []string{}
-		err = dynamodbattribute.Unmarshal(dynamoCheckResult["responses"], &responseIds)
-		if err != nil {
-			logger.WithError(err).Error("Error unmarshalling response list from dynamodb")
+		responseProto := []byte{}
+		if err := dynamodbattribute.Unmarshal(responseProtoAv, &responseProto); err != nil {
+			logger.WithError(err).Error("Error unmarshalling response protobuf from dynamodb")
 			return nil, err
 		}
-
-		checkResponses := make([]*schema.CheckResponse, len(responseIds))
-		for j, responseId := range responseIds {
-			logger := log.WithFields(log.Fields{
-				"fn":          "CheckResults",
-				"check_id":    checkId,
-				"result_id":   aws.StringValue(resultAvMap["result_id"].S),
-				"response_id": responseId,
-			})
-			responseIdAv, err := dynamodbattribute.Marshal(responseId)
-
-			responseGetItemResponse, err := s.DynaClient.GetItem(&dynamodb.GetItemInput{
-				TableName: aws.String(CheckResponseTableName),
-				Key: map[string]*dynamodb.AttributeValue{
-					"response_id": responseIdAv,
-				},
-			})
-			if err != nil {
-				logger.WithError(err).Error("Error getting response item from dynamodb.")
-				return nil, err
-			}
-
-			checkResponse := &schema.CheckResponse{}
-			responseProtoAv, ok := responseGetItemResponse.Item["response_protobuf"]
-			if !ok {
-				err := fmt.Errorf("Response in dynamodb had no response object.")
-				logger.WithError(err).Error("Empty response protobuf in dynamodb.")
-				return nil, err
-			}
-			responseProto := []byte{}
-			if err := dynamodbattribute.Unmarshal(responseProtoAv, &responseProto); err != nil {
-				logger.WithError(err).Error("Error unmarshalling response protobuf from dynamodb")
-				return nil, err
-			}
-			if err := proto.Unmarshal(responseProto, checkResponse); err != nil {
-				logger.WithError(err).Error("Error unmarshalling response protobuf")
-				return nil, err
-			}
-			checkResponses[j] = checkResponse
+		if err := proto.Unmarshal(responseProto, checkResponse); err != nil {
+			logger.WithError(err).Error("Error unmarshalling response protobuf")
+			return nil, err
 		}
-
-		result.Responses = checkResponses
-		results[i] = result
+		checkResponses[j] = checkResponse
 	}
+	result.Responses = checkResponses
 
-	return results, nil
+	return result, nil
 }
 
 func (s *DynamoStore) PutResult(result *schema.CheckResult) error {

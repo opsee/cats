@@ -7,6 +7,7 @@ import (
 	"github.com/opsee/basic/grpcutil"
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/basic/tp"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
@@ -14,11 +15,12 @@ import (
 )
 
 type service struct {
-	checkStore store.CheckStore
-	teamStore  store.TeamStore
+	checkStore  store.CheckStore
+	teamStore   store.TeamStore
+	resultStore results.Store
 }
 
-func New(pgConn string) (*service, error) {
+func New(pgConn string, resultStore results.Store) (*service, error) {
 	db, err := store.NewPostgres(pgConn)
 	if err != nil {
 		return nil, err
@@ -27,6 +29,8 @@ func New(pgConn string) (*service, error) {
 	svc := &service{
 		checkStore: store.NewCheckStore(db),
 		teamStore:  store.NewTeamStore(db),
+		//resultStore: &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))},
+		resultStore: resultStore,
 	}
 
 	return svc, nil
