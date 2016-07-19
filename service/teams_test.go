@@ -58,10 +58,10 @@ func TestUpdateTeam(t *testing.T) {
 
 	team := new(schema.Team)
 	*team = *testutil.Teams["active"]
-	assert.Equal("beta", team.Subscription)
+	assert.Equal("beta", team.SubscriptionPlan)
 
 	// change subscription to team plan, increase quantity
-	team.Subscription = "team_monthly"
+	team.SubscriptionPlan = "team_monthly"
 	team.SubscriptionQuantity = 5
 
 	res, err := s.UpdateTeam(context.Background(), &opsee.UpdateTeamRequest{
@@ -70,6 +70,6 @@ func TestUpdateTeam(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(res.Team)
-	assert.Equal("team_monthly", res.Team.Subscription)
+	assert.Equal("team_monthly", res.Team.SubscriptionPlan)
 	assert.EqualValues(5, res.Team.SubscriptionQuantity)
 }

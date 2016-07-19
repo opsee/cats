@@ -8,7 +8,8 @@ var Teams = map[string]*schema.Team{
 	"active": {
 		Id:                   "11111111-1111-1111-1111-111111111111",
 		Name:                 "barbell brigade death squad crew",
-		Subscription:         "beta",
+		SubscriptionPlan:     "beta",
+		SubscriptionStatus:   "active",
 		StripeCustomerId:     "cus_8oux3kULDWgU8F",
 		StripeSubscriptionId: "sub_8owgXA5pkRDs31",
 		SubscriptionQuantity: int32(3),
@@ -16,7 +17,8 @@ var Teams = map[string]*schema.Team{
 	"inactive": {
 		Id:                   "00000000-0000-0000-0000-000000000000",
 		Name:                 "INACTIVE",
-		Subscription:         "beta",
+		SubscriptionPlan:     "beta",
+		SubscriptionStatus:   "canceled",
 		StripeCustomerId:     "",
 		StripeSubscriptionId: "",
 		SubscriptionQuantity: int32(3),

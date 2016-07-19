@@ -20,7 +20,7 @@ func TestTeamGet(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(team)
 		assert.Equal("barbell brigade death squad crew", team.Name)
-		assert.Equal("beta", team.Subscription)
+		assert.Equal("beta", team.SubscriptionPlan)
 		assert.Equal(4, len(team.Users))
 
 		// we don't return inactive teams
@@ -39,7 +39,7 @@ func TestTeamUpdate(t *testing.T) {
 		assert.NotNil(team)
 
 		// change subscription to team plan, increase quantity
-		team.Subscription = "team_monthly"
+		team.SubscriptionPlan = "team_monthly"
 		team.SubscriptionQuantity = 5
 		// hey, update the name while we're at it
 		team.Name = "money"
@@ -47,7 +47,7 @@ func TestTeamUpdate(t *testing.T) {
 		err = q.Update(team)
 		assert.NoError(err)
 		assert.Equal("money", team.Name)
-		assert.Equal("team_monthly", team.Subscription)
+		assert.Equal("team_monthly", team.SubscriptionPlan)
 		assert.EqualValues(5, team.SubscriptionQuantity)
 	})
 }
@@ -71,8 +71,17 @@ func withTeamFixtures(testFun func(TeamStore)) {
 	for k, t := range testutil.Teams {
 		_, err = sqlx.NamedExec(
 			tx,
-			fmt.Sprintf(`insert into customers (id, name, active, subscription, stripe_customer_id, stripe_subscription_id, subscription_quantity) values
-			(:id, :name, %t, :subscription, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity)`, k == "active"),
+			fmt.Sprintf(`insert into customers (id, name, active) values
+			(:id, :name, %t)`, k == "active"),
+			t,
+		)
+		if err != nil {
+			panic(err)
+		}
+		_, err = sqlx.NamedExec(
+			tx,
+			fmt.Sprintf(`insert into subscription (plan, stripe_customer_id, stripe_subscription_id, quantity, status) values
+			(:subscription_plan, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity, :subscription_status)`),
 			t,
 		)
 		if err != nil {

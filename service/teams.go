@@ -36,31 +36,35 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		return nil, err
 	}
 
-	currentTeam, err := s.teamStore.Get(req.Team.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	if currentTeam == nil {
-		return nil, fmt.Errorf("no team found")
-	}
-
-	// update subscription if necessary
-	if currentTeam.Subscription != req.Team.Subscription || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "" {
-		currentTeam.Subscription = req.Team.Subscription
-		currentTeam.SubscriptionQuantity = req.Team.SubscriptionQuantity
-
-		err = subscriptions.Update(currentTeam, req.StripeToken)
+	if err := s.teamStore.WithTX(func(ts store.TeamStore) error {
+		currentTeam, err := ts.Get(req.Team.Id)
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
 
-	// update other pertinent fields in the team (name i guess)
-	currentTeam.Name = req.Team.Name
+		if currentTeam == nil {
+			return fmt.Errorf("no team found")
+		}
 
-	err = s.teamStore.Update(currentTeam)
-	if err != nil {
+		// update subscription if necessary
+		if currentTeam.SubscriptionPlan != req.Team.SubscriptionPlan || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "" {
+			currentTeam.SubscriptionPlan = req.Team.SubscriptionPlan
+			currentTeam.SubscriptionQuantity = req.Team.SubscriptionQuantity
+
+			err = subscriptions.Update(currentTeam, req.StripeToken)
+			if err != nil {
+				return err
+			}
+		}
+
+		// update other pertinent fields in the team (name i guess)
+		currentTeam.Name = req.Team.Name
+
+		err = ts.Update(currentTeam)
+		if err != nil {
+			return err
+		}
+	}); err != nil {
 		return nil, err
 	}
 

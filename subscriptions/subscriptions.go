@@ -44,13 +44,13 @@ func (p Plan) Validate() error {
 // source. If supplied, it will be applied to the stripe customer as the payment source for the
 // subscription.
 func Create(team *schema.Team, email string, tokenSource string) error {
-	if err := Plan(team.Subscription).Validate(); err != nil {
+	if err := Plan(team.SubscriptionPlan).Validate(); err != nil {
 		return err
 	}
 
 	params := &stripe.CustomerParams{
 		Email:    email,
-		Plan:     team.Subscription,
+		Plan:     team.SubscriptionPlan,
 		Quantity: uint64(team.SubscriptionQuantity),
 	}
 
@@ -91,7 +91,7 @@ func Create(team *schema.Team, email string, tokenSource string) error {
 
 // Update a customer's subscription in stripe
 func Update(team *schema.Team, tokenSource string) error {
-	if err := Plan(team.Subscription).Validate(); err != nil {
+	if err := Plan(team.SubscriptionPlan).Validate(); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func Update(team *schema.Team, tokenSource string) error {
 
 	params := &stripe.SubParams{
 		Customer: team.StripeCustomerId,
-		Plan:     team.Subscription,
+		Plan:     team.SubscriptionPlan,
 		Quantity: uint64(team.SubscriptionQuantity),
 	}
 
@@ -113,7 +113,7 @@ func Update(team *schema.Team, tokenSource string) error {
 		params.Token = tokenSource
 	}
 
-	res, err := sub.Update(team.StripeSubscriptionId, params)
+	_, err := sub.Update(team.StripeSubscriptionId, params)
 	if err != nil {
 		return err
 	}
