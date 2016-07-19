@@ -17,6 +17,7 @@ type CheckStore interface {
 }
 
 type TeamStore interface {
+	WithTX(txfun func(TeamStore) error) error
 	Get(id string) (*schema.Team, error)
 	GetUsers(id string) ([]*schema.User, error)
 	GetInvites(id string) ([]*schema.User, error)

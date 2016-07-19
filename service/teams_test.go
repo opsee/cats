@@ -5,6 +5,7 @@ import (
 
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
+	"github.com/opsee/cats/store"
 	"github.com/opsee/cats/testutil"
 	"github.com/stretchr/testify/assert"
 	// "github.com/opsee/cats/subscriptions"
@@ -13,6 +14,10 @@ import (
 
 type testTeamStore struct {
 	curTeam *schema.Team
+}
+
+func (q *testTeamStore) WithTX(txfun func(store.TeamStore) error) error {
+	return txfun(q)
 }
 
 func (q *testTeamStore) Get(id string) (*schema.Team, error) {

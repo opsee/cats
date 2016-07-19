@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/testutil"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,8 @@ func TestTeamGet(t *testing.T) {
 		assert.NotNil(team)
 		assert.Equal("barbell brigade death squad crew", team.Name)
 		assert.Equal("beta", team.SubscriptionPlan)
+		assert.Equal("active", team.SubscriptionStatus)
+		assert.EqualValues(3, team.SubscriptionQuantity)
 		assert.Equal(4, len(team.Users))
 
 		// we don't return inactive teams
@@ -41,6 +44,7 @@ func TestTeamUpdate(t *testing.T) {
 		// change subscription to team plan, increase quantity
 		team.SubscriptionPlan = "team_monthly"
 		team.SubscriptionQuantity = 5
+		team.SubscriptionStatus = "trialing"
 		// hey, update the name while we're at it
 		team.Name = "money"
 
@@ -49,6 +53,42 @@ func TestTeamUpdate(t *testing.T) {
 		assert.Equal("money", team.Name)
 		assert.Equal("team_monthly", team.SubscriptionPlan)
 		assert.EqualValues(5, team.SubscriptionQuantity)
+		assert.Equal("trialing", team.SubscriptionStatus)
+	})
+}
+
+func TestTeamCreate(t *testing.T) {
+	assert := assert.New(t)
+
+	withTeamFixtures(func(q TeamStore) {
+		team := &schema.Team{
+			Name:                 "etixx quickstep",
+			SubscriptionPlan:     "free",
+			SubscriptionQuantity: 0,
+			SubscriptionStatus:   "active",
+			StripeCustomerId:     "idk",
+			StripeSubscriptionId: "iidk2",
+		}
+		err := q.Create(team)
+		assert.Nil(err)
+		assert.Equal("free", team.SubscriptionPlan)
+		assert.EqualValues(0, team.SubscriptionQuantity)
+		assert.Equal("active", team.SubscriptionStatus)
+		assert.Equal("idk", team.StripeCustomerId)
+		assert.Equal("iidk2", team.StripeSubscriptionId)
+	})
+}
+
+func TestTeamDelete(t *testing.T) {
+	assert := assert.New(t)
+
+	withTeamFixtures(func(q TeamStore) {
+		err := q.Delete(&schema.Team{Id: "11111111-1111-1111-1111-111111111111"})
+		assert.NoError(err)
+
+		t, err := q.Get("11111111-1111-1111-1111-111111111111")
+		assert.NoError(err)
+		assert.Nil(t)
 	})
 }
 
@@ -69,19 +109,28 @@ func withTeamFixtures(testFun func(TeamStore)) {
 	defer tx.Rollback()
 
 	for k, t := range testutil.Teams {
-		_, err = sqlx.NamedExec(
+		rows, err := sqlx.NamedQuery(
 			tx,
-			fmt.Sprintf(`insert into customers (id, name, active) values
-			(:id, :name, %t)`, k == "active"),
+			`insert into subscriptions (plan, stripe_customer_id, stripe_subscription_id, quantity, status) values
+			(:subscription_plan, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity, :subscription_status) returning id`,
 			t,
 		)
 		if err != nil {
 			panic(err)
 		}
+
+		var sub struct {
+			Id int
+		}
+		for rows.Next() {
+			rows.StructScan(&sub)
+		}
+		rows.Close()
+
 		_, err = sqlx.NamedExec(
 			tx,
-			fmt.Sprintf(`insert into subscription (plan, stripe_customer_id, stripe_subscription_id, quantity, status) values
-			(:subscription_plan, :stripe_customer_id, :stripe_subscription_id, :subscription_quantity, :subscription_status)`),
+			fmt.Sprintf(`insert into customers (id, name, active, subscription_id) values
+			(:id, :name, %t, %d)`, k == "active", sub.Id),
 			t,
 		)
 		if err != nil {
@@ -114,5 +163,5 @@ func withTeamFixtures(testFun func(TeamStore)) {
 	}
 
 	// create a new team store with the transaction and give it to our test funcs
-	testFun(NewTeamStore(tx))
+	testFun(&teamStore{tx, db})
 }

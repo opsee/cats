@@ -3,7 +3,9 @@ package service
 import (
 	"fmt"
 
+	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
+	"github.com/opsee/cats/store"
 	"github.com/opsee/cats/subscriptions"
 	"golang.org/x/net/context"
 )
@@ -36,8 +38,13 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		return nil, err
 	}
 
+	var (
+		currentTeam *schema.Team
+		err         error
+	)
+
 	if err := s.teamStore.WithTX(func(ts store.TeamStore) error {
-		currentTeam, err := ts.Get(req.Team.Id)
+		currentTeam, err = ts.Get(req.Team.Id)
 		if err != nil {
 			return err
 		}
@@ -60,10 +67,8 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		// update other pertinent fields in the team (name i guess)
 		currentTeam.Name = req.Team.Name
 
-		err = ts.Update(currentTeam)
-		if err != nil {
-			return err
-		}
+		return ts.Update(currentTeam)
+
 	}); err != nil {
 		return nil, err
 	}

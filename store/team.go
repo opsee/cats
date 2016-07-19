@@ -125,8 +125,8 @@ func (q *teamStore) Create(team *schema.Team) error {
 			insert into subscriptions (quantity, status, plan) values (:subscription_quantity, :subscription_status, :subscription_plan) returning *
 		)
 		insert into customers (name, active, subscription_id)
-		values (:name, true, i.id)
-		returning id, i.quantity as subscription_quantity, i.status as subscription_status, i.plan as subscription_plan`,
+		values (:name, true, (select id from i))
+		returning id, (select quantity from i) as subscription_quantity, (select status from i) as subscription_status, (select plan from i) as subscription_plan`,
 		team,
 	)
 	if err != nil {
@@ -174,11 +174,14 @@ func (q *teamStore) Update(team *schema.Team) error {
 func (q *teamStore) UpdateSubscription(team *schema.Team) error {
 	rows, err := sqlx.NamedQuery(
 		q,
-		`update subscriptions set
+		`with t as (
+			select subscription_id from team where id = :id
+		)
+		update subscriptions set
 		plan = :subscription_plan, stripe_customer_id = :stripe_customer_id, 
 		stripe_subscription_id = :stripe_subscription_id, quantity = :subscription_quantity,
 		status = :subscription_status
-		where customer_id = :id
+		where id = (select subscription_id from t)
 		returning plan as subscription_plan, quantity as subscription_quantity, status as subscription_status, stripe_customer_id, stripe_subscription_id`,
 		team,
 	)
