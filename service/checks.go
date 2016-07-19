@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
@@ -71,4 +72,46 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 		return nil, err
 	}
 	return &opsee.GetCheckResultsResponse{results}, nil
+}
+
+func (s *service) GetCheckStateTransitionLogEntries(ctx context.Context, req *opsee.GetCheckStateTransitionLogEntriesRequest) (response *opsee.GetStateTransitionLogEntriesResponse, err error) {
+	if req.CustomerId == "" {
+		return nil, fmt.Errorf("Request missing CustomerID")
+	}
+
+	if req.CheckId == "" {
+		return nil, fmt.Errorf("Request missing CheckID")
+	}
+
+	if req.AbsoluteStartTime == nil {
+		return nil, fmt.Errorf("Request missing AbsoluteStartTime")
+	}
+
+	if req.AbsoluteEndTime == nil {
+		return nil, fmt.Errorf("Request missing AbsoluteEndTime")
+	}
+
+	st, err := req.AbsoluteStartTime.Value()
+	if err != nil {
+		return nil, fmt.Errorf("Invalid AbsoluteStartTime")
+	}
+	et, err := req.AbsoluteEndTime.Value()
+	if err != nil {
+		return nil, fmt.Errorf("Invalid AbsoluteEndTime")
+	}
+	ast, aok := st.(time.Time)
+	if !aok {
+		return nil, fmt.Errorf("invalid AbsoluteStartTime")
+	}
+	aet, eok := et.(time.Time)
+	if !eok {
+		return nil, fmt.Errorf("invalid AbsoluteEndTime")
+	}
+
+	entries, err := s.checkStore.GetStateTransitionLogEntires(req.CustomerId, req.CheckId, ast, aet)
+	if err != nil {
+		return nil, err
+	}
+
+	return &opsee.GetCheckStateTransitionLogEntriesResponse{entries}, nil
 }
