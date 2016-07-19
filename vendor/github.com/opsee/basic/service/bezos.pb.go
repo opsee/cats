@@ -20,6 +20,8 @@
 		GetCheckCountResponse
 		GetCheckResultsRequest
 		GetCheckResultsResponse
+		GetCheckStateTransitionsRequest
+		GetCheckStateTransitionsResponse
 		ListCustomersResponse
 		GetUserRequest
 		GetUserResponse

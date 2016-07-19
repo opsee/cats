@@ -146,7 +146,7 @@ func (q *checkStore) GetCheckCount(user *schema.User, prorated bool) (float32, e
 
 // GetStateTransitionLogEntries returns state transition log entries between a start and end time
 // log entry or an error.
-func (q *checkStore) GetStateTranistionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error) {
+func (q *checkStore) GetCheckStateTransitionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error) {
 	var logEntries []*checks.StateTransitionLogEntry
 
 	err := sqlx.Select(q, &logEntries, "SELECT * FROM check_state_transitions WHERE check_id=$1 AND customer_id=$2 AND created_at BETWEEN $3::timestamp AND $4::timestamp", checkId, customerId, from.Format("2013-06-05T14:10:43.678Z"), to.Format("2013-06-05T14:10:43.678Z"))

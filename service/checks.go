@@ -8,6 +8,7 @@ import (
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
+	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 	"golang.org/x/net/context"
 )
 
@@ -74,7 +75,7 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 	return &opsee.GetCheckResultsResponse{results}, nil
 }
 
-func (s *service) GetCheckStateTransitionLogEntries(ctx context.Context, req *opsee.GetCheckStateTransitionLogEntriesRequest) (response *opsee.GetStateTransitionLogEntriesResponse, err error) {
+func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCheckStateTransitionsRequest) (response *opsee.GetCheckStateTransitionsResponse, err error) {
 	if req.CustomerId == "" {
 		return nil, fmt.Errorf("Request missing CustomerID")
 	}
@@ -108,10 +109,25 @@ func (s *service) GetCheckStateTransitionLogEntries(ctx context.Context, req *op
 		return nil, fmt.Errorf("invalid AbsoluteEndTime")
 	}
 
-	entries, err := s.checkStore.GetStateTransitionLogEntires(req.CustomerId, req.CheckId, ast, aet)
+	var logEntries []*schema.CheckStateTransition
+	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CustomerId, req.CheckId, ast, aet)
 	if err != nil {
 		return nil, err
 	}
 
-	return &opsee.GetCheckStateTransitionLogEntriesResponse{entries}, nil
+	for _, e := range entries {
+		timestamp := &opsee_types.Timestamp{}
+		if err := timestamp.Scan(e.CreatedAt); err != nil {
+			continue
+		}
+
+		logEntries = append(logEntries, &schema.CheckStateTransition{
+			CheckId:    req.CheckId,
+			From:       e.From.String(),
+			To:         e.To.String(),
+			OccurredAt: timestamp,
+		})
+	}
+
+	return &opsee.GetCheckStateTransitionsResponse{logEntries}, nil
 }
