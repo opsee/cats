@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
@@ -47,13 +48,27 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 	}
 
 	results := make([]*schema.CheckResult, len(bastions))
+	wg := &sync.WaitGroup{}
 	for i, b := range bastions {
-		result, err := s.resultStore.GetResultByCheckId(b, req.CheckId)
-		if err != nil {
-			return nil, err
-		}
-
-		results[i] = result
+		wg.Add(1)
+		go func(bastionId string, idx int) {
+			var result *schema.CheckResult
+			result, err = s.resultStore.GetResultByCheckId(bastionId, req.CheckId)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"fn":         "GetCheckResults",
+					"check_id":   req.CheckId,
+					"bastion_id": bastionId,
+				}).WithError(err).Error("Error getting result from result store.")
+			}
+			results[idx] = result
+			wg.Done()
+		}(b, i)
+	}
+	wg.Wait()
+	// We can't return partial results, so we return an error if there was any error.
+	if err != nil {
+		return nil, err
 	}
 	return &opsee.GetCheckResultsResponse{results}, nil
 }

@@ -3,6 +3,10 @@ package main
 import (
 	"io/ioutil"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/service"
 	"github.com/opsee/cats/servicer"
 	vapestore "github.com/opsee/cats/servicer/store"
@@ -37,7 +41,15 @@ func main() {
 		SlackUrl:    viper.GetString("slack_url"),
 	})
 
-	svc, err := service.New(viper.GetString("postgres_conn"))
+	resultStore := &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))}
+	/*
+		resultStore := &results.S3Store{s3.New(
+			BucketName: viper.GetString("results_s3_bucket"),
+			S3Client: session.New(aws.NewConfig().WithRegion("us-west-2"))),
+		}
+	*/
+
+	svc, err := service.New(viper.GetString("postgres_conn"), resultStore)
 	if err != nil {
 		log.WithError(err).Fatal("Unable to start service.")
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -18,49 +17,37 @@ type S3Store struct {
 	S3Client   *s3.S3
 }
 
-// GetResultsByCheckId gets the latest CheckResults for a Check from persistent storage.
-func (s *S3Store) GetResultsByCheckId(checkId string) ([]*schema.CheckResult, error) {
-	resultsPath := fmt.Sprintf("latest/%s", checkId)
-	resp, err := s.S3Client.ListObjects(&s3.ListObjectsInput{
-		Bucket:    aws.String(s.BucketName),
-		Delimiter: aws.String("/"),
-		Prefix:    aws.String(resultsPath),
+// GetResultByCheckId gets the latest CheckResult for a Check from persistent storage.
+func (s *S3Store) GetResultByCheckId(bastionId, checkId string) (result *schema.CheckResult, err error) {
+	resultPath := fmt.Sprintf("%s/%s/latest.pb", checkId, bastionId)
+
+	getObjResp, err := s.S3Client.GetObject(&s3.GetObjectInput{
+		Bucket:              aws.String(s.BucketName),
+		Key:                 aws.String(resultPath),
+		ResponseContentType: aws.String("application/octet-stream"),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]*schema.CheckResult, len(resp.Contents))
-	for i, obj := range resp.Contents {
-		getObjResp, err := s.S3Client.GetObject(&s3.GetObjectInput{
-			Bucket:              aws.String(s.BucketName),
-			Key:                 obj.Key,
-			ResponseContentType: aws.String("application/octet-stream"),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		bodyBytes, err := ioutil.ReadAll(getObjResp.Body)
-		getObjResp.Body.Close()
-		if err != nil {
-			return nil, err
-		}
-
-		result := &schema.CheckResult{}
-		if err := proto.Unmarshal(bodyBytes, result); err != nil {
-			return nil, err
-		}
-		results[i] = result
+	bodyBytes, err := ioutil.ReadAll(getObjResp.Body)
+	getObjResp.Body.Close()
+	if err != nil {
+		return nil, err
 	}
 
-	return results, nil
+	result = &schema.CheckResult{}
+
+	if err := proto.Unmarshal(bodyBytes, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // PutResult puts a CheckResult to persistent storage.
 func (s *S3Store) PutResult(result *schema.CheckResult) error {
-	timestamp := time.Unix(result.Timestamp.Seconds, int64(result.Timestamp.Nanos)).UTC()
-	resultPath := fmt.Sprintf("latest/%s/%s/%d.pb", result.CheckId, result.BastionId, timestamp)
+	resultPath := fmt.Sprintf("%s/%s/latest.pb", result.CheckId, result.BastionId)
 
 	resultBytes, err := proto.Marshal(result)
 	if err != nil {
