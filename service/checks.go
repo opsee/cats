@@ -3,10 +3,12 @@ package service
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
 	log "github.com/opsee/logrus"
+	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 	"golang.org/x/net/context"
 )
 
@@ -76,4 +78,61 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 		return nil, err
 	}
 	return &opsee.GetCheckResultsResponse{results}, nil
+}
+
+func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCheckStateTransitionsRequest) (response *opsee.GetCheckStateTransitionsResponse, err error) {
+	if req.CustomerId == "" {
+		return nil, fmt.Errorf("Request missing CustomerID")
+	}
+
+	if req.CheckId == "" {
+		return nil, fmt.Errorf("Request missing CheckID")
+	}
+
+	if req.AbsoluteStartTime == nil {
+		return nil, fmt.Errorf("Request missing AbsoluteStartTime")
+	}
+
+	if req.AbsoluteEndTime == nil {
+		return nil, fmt.Errorf("Request missing AbsoluteEndTime")
+	}
+
+	st, err := req.AbsoluteStartTime.Value()
+	if err != nil {
+		return nil, fmt.Errorf("Invalid AbsoluteStartTime")
+	}
+	et, err := req.AbsoluteEndTime.Value()
+	if err != nil {
+		return nil, fmt.Errorf("Invalid AbsoluteEndTime")
+	}
+	ast, aok := st.(time.Time)
+	if !aok {
+		return nil, fmt.Errorf("invalid AbsoluteStartTime")
+	}
+	aet, eok := et.(time.Time)
+	if !eok {
+		return nil, fmt.Errorf("invalid AbsoluteEndTime")
+	}
+
+	var logEntries []*schema.CheckStateTransition
+	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CustomerId, req.CheckId, ast, aet)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range entries {
+		timestamp := &opsee_types.Timestamp{}
+		if err := timestamp.Scan(e.CreatedAt); err != nil {
+			continue
+		}
+
+		logEntries = append(logEntries, &schema.CheckStateTransition{
+			CheckId:    req.CheckId,
+			From:       e.From.String(),
+			To:         e.To.String(),
+			OccurredAt: timestamp,
+		})
+	}
+
+	return &opsee.GetCheckStateTransitionsResponse{logEntries}, nil
 }

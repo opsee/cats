@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gogo/protobuf/proto"
 	"github.com/opsee/basic/schema"
+	log "github.com/opsee/logrus"
 )
 
 // S3Store stores CheckResult objects in S3 by ResultId (check_id:bastion_id).
@@ -20,6 +21,7 @@ type S3Store struct {
 // GetResultByCheckId gets the latest CheckResult for a Check from persistent storage.
 func (s *S3Store) GetResultByCheckId(bastionId, checkId string) (result *schema.CheckResult, err error) {
 	resultPath := fmt.Sprintf("%s/%s/latest.pb", checkId, bastionId)
+	log.Infof("fetching result from s3://%s/%s", s.BucketName, resultPath)
 
 	getObjResp, err := s.S3Client.GetObject(&s3.GetObjectInput{
 		Bucket:              aws.String(s.BucketName),

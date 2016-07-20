@@ -6,16 +6,10 @@
         "Essential": true,
         "Command": ["/run.sh", "pracovnik"],
         "Environment": [
-            { "Name": "CATS_RESULTS_S3_BUCKET", "Value": "${s3_bucket}" },
             { "Name": "APPENV", "Value": "${appenv}" }
         ],
         "LogConfiguration": {
-            "LogDriver": "syslog",
-            "Options": {
-                "syslog-address": "${syslog_address}",
-                "tag": "${syslog_tag}",
-                "syslog-tls-skip-verify": "true"
-            }
+            "LogDriver": "json-file"
         }
     }
 ]

@@ -16,6 +16,7 @@ ENV CATS_INTERCOM_KEY=""
 ENV CATS_CLOSEIO_KEY=""
 ENV CATS_SLACK_URL=""
 ENV CATS_STRIPE_KEY=""
+ENV CATS_RESULTS_S3_BUCKET=""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
