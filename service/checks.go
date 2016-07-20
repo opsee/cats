@@ -12,6 +12,37 @@ import (
 	"golang.org/x/net/context"
 )
 
+func (s *service) GetChecks(ctx context.Context, req *opsee.GetChecksRequest) (*opsee.GetChecksResponse, error) {
+	if req.Requestor == nil {
+		log.Error("no user in request")
+		return nil, fmt.Errorf("user is required")
+	}
+
+	if err := req.Requestor.Validate(); err != nil {
+		log.WithError(err).Error("user is invalid")
+		return nil, err
+	}
+
+	if req.CheckId != "" {
+		checkId := req.CheckId
+		check, err := s.checkStore.GetCheck(req.Requestor, checkId)
+		if err != nil {
+			log.WithError(err).Errorf("failed to get check from db: %s", checkId)
+			return nil, err
+		}
+
+		return &opsee.GetChecksResponse{[]*schema.Check{check}}, nil
+	}
+
+	checks, err := s.checkStore.GetChecks(req.Requestor)
+	if err != nil {
+		log.WithError(err).Errorf("failed to get checks from db")
+		return nil, err
+	}
+
+	return &opsee.GetChecksResponse{checks}, nil
+}
+
 func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountRequest) (*opsee.GetCheckCountResponse, error) {
 	if req.User == nil {
 		log.Error("no user in request")
