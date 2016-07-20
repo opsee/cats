@@ -4,7 +4,7 @@ import (
 	"github.com/opsee/basic/schema"
 )
 
-var Teams = map[string]*schema.Team{
+var Teams = map[string]schema.Team{
 	"active": {
 		Id:                   "11111111-1111-1111-1111-111111111111",
 		Name:                 "barbell brigade death squad crew",
@@ -25,7 +25,7 @@ var Teams = map[string]*schema.Team{
 	},
 }
 
-var Users = map[string]*schema.User{
+var Users = map[string]schema.User{
 	"active_admin": {
 		Email:      "opsee+active+admin@opsee.com",
 		Active:     true,
@@ -52,7 +52,7 @@ var Users = map[string]*schema.User{
 	},
 }
 
-var Invites = map[string]*schema.Invite{
+var Invites = map[string]schema.Invite{
 	"invited_admin": {
 		Email:      "opsee+invited+admin+pending@opsee.com",
 		Claimed:    false,

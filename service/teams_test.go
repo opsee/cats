@@ -9,7 +9,6 @@ import (
 	"github.com/opsee/cats/store"
 	"github.com/opsee/cats/testutil"
 	"github.com/stretchr/testify/assert"
-	// "github.com/opsee/cats/subscriptions"
 	"golang.org/x/net/context"
 )
 
@@ -22,14 +21,14 @@ func (q *testTeamStore) WithTX(txfun func(store.TeamStore) error) error {
 }
 
 func (q *testTeamStore) Get(id string) (*schema.Team, error) {
-	return testutil.Teams["active"], nil
+	return q.curTeam, nil
 }
 
 func (q *testTeamStore) GetUsers(id string) ([]*schema.User, error) {
 	var users []*schema.User
 	for _, u := range testutil.Users {
 		if u.Active {
-			users = append(users, u)
+			users = append(users, &u)
 		}
 	}
 	return users, nil
@@ -41,6 +40,7 @@ func (q *testTeamStore) GetInvites(id string) ([]*schema.User, error) {
 }
 
 func (q *testTeamStore) Create(team *schema.Team) error {
+	team.Id = "666"
 	q.curTeam = team
 	return nil
 }
@@ -55,15 +55,18 @@ func (q *testTeamStore) Delete(team *schema.Team) error {
 	return nil
 }
 
-func TestCreateDeleteTeam(t *testing.T) {
+func TestCreateUpdateDeleteTeam(t *testing.T) {
 	assert := assert.New(t)
-	ts := &testTeamStore{}
+
+	curTeam := testutil.Teams["active"]
+	ts := &testTeamStore{&curTeam}
 	s := &service{
 		teamStore: ts,
 	}
 
 	team := &schema.Team{
-		Name: "http://www.customink.com/team/bowling-team-names",
+		Name:             "http://www.customink.com/team/bowling-team-names",
+		SubscriptionPlan: "beta",
 	}
 
 	resp, err := s.CreateTeam(context.Background(), &opsee.CreateTeamRequest{
@@ -79,18 +82,7 @@ func TestCreateDeleteTeam(t *testing.T) {
 	assert.Equal("trialing", resp.Team.SubscriptionStatus)
 	assert.NotEmpty(resp.Team.StripeSubscriptionId)
 	assert.NotEmpty(resp.Team.StripeCustomerId)
-}
-
-func TestUpdateTeam(t *testing.T) {
-	assert := assert.New(t)
-	ts := &testTeamStore{}
-	s := &service{
-		teamStore: ts,
-	}
-
-	team := new(schema.Team)
-	*team = *testutil.Teams["active"]
-	assert.Equal("beta", team.SubscriptionPlan)
+	assert.NotEmpty(resp.Team.Id)
 
 	// change subscription to team plan, increase quantity
 	team.SubscriptionPlan = "team_monthly"
@@ -104,4 +96,9 @@ func TestUpdateTeam(t *testing.T) {
 	assert.NotNil(res.Team)
 	assert.Equal("team_monthly", res.Team.SubscriptionPlan)
 	assert.EqualValues(5, res.Team.SubscriptionQuantity)
+
+	_, err = s.DeleteTeam(context.Background(), &opsee.DeleteTeamRequest{
+		Team: team,
+	})
+	assert.NoError(err)
 }

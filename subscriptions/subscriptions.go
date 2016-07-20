@@ -89,6 +89,7 @@ func Create(team *schema.Team, email string, tokenSource string, trialEnd int64)
 
 	subscription := response.Subs.Values[0]
 	team.StripeSubscriptionId = subscription.ID
+	team.SubscriptionStatus = string(subscription.Status)
 
 	return nil
 }
