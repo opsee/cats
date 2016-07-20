@@ -12,11 +12,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// just a shim bc basic has been updated w this
-func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCheckStateTransitionsRequest) (response *opsee.GetCheckStateTransitionsResponse, err error) {
-	return nil, nil
-}
-
 func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountRequest) (*opsee.GetCheckCountResponse, error) {
 	if req.User == nil {
 		log.Error("no user in request")

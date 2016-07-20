@@ -150,8 +150,3 @@ func (s *service) DeleteTeam(ctx context.Context, req *opsee.DeleteTeamRequest) 
 		Team: currentTeam,
 	}, nil
 }
-
-// Creates team, including users
-func (s *service) CreateTeam(ctx context.Context, req *opsee.CreateTeamRequest) (*opsee.CreateTeamResponse, error) {
-	return nil, nil
-}
