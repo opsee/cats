@@ -110,7 +110,7 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 	}
 
 	var logEntries []*schema.CheckStateTransition
-	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CustomerId, req.CheckId, ast, aet)
+	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CheckId, req.CustomerId, ast, aet)
 	if err != nil {
 		return nil, err
 	}
