@@ -1,31 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/s3"
-	etcd "github.com/coreos/etcd/client"
 	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/nsqio/go-nsq"
 	"github.com/opsee/basic/schema"
+	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/cats/checks"
 	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/checks/worker"
+	"github.com/opsee/cats/service"
 	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -76,8 +75,6 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	maxTasks := viper.GetInt("max_tasks")
-	// in-memory cache of customerId -> bastionId
-	bastionMap := map[string]string{}
 
 	consumer, err := worker.NewConsumer(&worker.ConsumerConfig{
 		Topic:            "_.results",
@@ -102,25 +99,15 @@ func main() {
 		log.WithError(err).Fatal("Cannot connect to database.")
 	}
 
-	// TODO(greg): All of the etcd stuff can go once bastions report their
-	// bastion id in check results.
-	etcdCfg := etcd.Config{
-		Endpoints:               []string{viper.GetString("etcd_address")},
-		Transport:               etcd.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
-	}
-	etcdClient, err := etcd.New(etcdCfg)
-	if err != nil {
-		log.WithError(err).Fatal("Cannot connect to etcd.")
-	}
-
-	kapi := etcd.NewKeysAPI(etcdClient)
-
 	awsSession := session.New(&aws.Config{Region: aws.String("us-west-2")})
-	dynamo := &results.DynamoStore{dynamodb.New(awsSession)}
 	s3Store := &results.S3Store{
 		S3Client:   s3.New(awsSession),
 		BucketName: viper.GetString("results_s3_bucket"),
+	}
+
+	catsSvc, err := service.New(viper.GetString("postgres_conn"), s3Store)
+	if err != nil {
+		log.WithError(err).Fatal("Can't create cats service")
 	}
 
 	consumer.AddHandler(func(msg *nsq.Message) error {
@@ -142,40 +129,6 @@ func main() {
 			return nil
 		}
 
-		// TODO(greg): Once all bastions have been upgraded to include Bastion ID in
-		// their check results, everything in this block can be deleted.
-		// -----------------------------------------------------------------------
-		if result.Version < 2 {
-			// Set bastion ID
-			bastionId, ok := bastionMap[result.CustomerId]
-			if !ok {
-				resp, err := kapi.Get(context.Background(), fmt.Sprintf("/opsee.co/routes/%s", result.CustomerId), nil)
-				if err != nil {
-					log.WithError(err).Error("Error getting bastion route from etcd.")
-					return err
-				}
-
-				if len(resp.Node.Nodes) < 1 {
-					log.Error("No bastion found for result in etcd.")
-					// When we don't find a bastion for this customer, we just drop their results.
-					// This isn't a problem after all customers are upgraded.
-					return nil
-				}
-
-				bastionPath := resp.Node.Nodes[0].Key
-				routeParts := strings.Split(bastionPath, "/")
-				if len(routeParts) != 5 {
-					log.WithError(err).Errorf("Unexpected route length: %d", len(routeParts))
-					return err
-				}
-				bastionId = routeParts[4]
-			}
-			result.BastionId = bastionId
-		}
-		// -----------------------------------------------------------------------
-
-		// For now, the region is just static, because we only have dynamodb in one region.
-
 		task := worker.NewCheckWorker(db, result)
 		_, err = task.Execute()
 		if err != nil {
@@ -187,13 +140,6 @@ func main() {
 			err := s3Store.PutResult(r)
 			if err != nil {
 				logger.WithFields(log.Fields{"bucket_name": s3Store.BucketName}).WithError(err).Error("Error putting result to s3")
-			}
-		}(result, logger)
-
-		go func(r *schema.CheckResult, logger *log.Entry) {
-			err := dynamo.PutResult(r)
-			if err != nil {
-				logger.WithError(err).Error("Error putting result to dynamodb")
 			}
 		}(result, logger)
 
@@ -219,12 +165,43 @@ func main() {
 		})
 
 		checkStore := store.NewCheckStore(db)
+
 		logEntry, err := checkStore.CreateStateTransitionLogEntry(state.CheckId, state.CustomerId, state.Id, newStateID)
 		if err != nil {
 			logger.WithError(err).Error("Error creating StateTransitionLogEntry")
 		}
 
 		logger.Infof("Created StateTransitionLogEntry: %d", logEntry.Id)
+
+		resultsResp, err := catsSvc.GetCheckResults(context.Background(), &opsee.GetCheckResultsRequest{
+			CustomerId: state.CustomerId,
+			CheckId:    state.CheckId,
+		})
+
+		if err != nil {
+			logger.WithError(err).Error("Error getting results for check")
+			return
+		}
+		results := resultsResp.Results
+		// What we just got from the check store has the old result object for this
+		// bastion. Replace it with the result from the transition.
+		for i, r := range results {
+			if result.BastionId == r.BastionId {
+				results[i] = result
+			}
+		}
+		check, err := checkStore.GetCheck(&schema.User{CustomerId: state.CustomerId}, state.CheckId)
+		if err != nil {
+			logger.WithError(err).Error("Error getting check from db: %s", state.CheckId)
+			return
+		}
+		check.Results = results
+
+		err = s3Store.PutCheckSnapshot(logEntry.Id, check)
+		if err != nil {
+			logger.WithError(err).Error("Error putting transition snapshot to s3")
+			return
+		}
 	})
 
 	publishToNSQ := func(result *schema.CheckResult) {

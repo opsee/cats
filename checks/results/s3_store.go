@@ -69,3 +69,50 @@ func (s *S3Store) PutResult(result *schema.CheckResult) error {
 
 	return nil
 }
+
+func (s *S3Store) GetCheckSnapshot(transitionId int64, checkId string) (check *schema.Check, err error) {
+	snapshotPath := fmt.Sprintf("%s/snapshots/%d.pb", checkId, transitionId)
+
+	getObjResp, err := s.S3Client.GetObject(&s3.GetObjectInput{
+		Bucket:              aws.String(s.BucketName),
+		Key:                 aws.String(snapshotPath),
+		ResponseContentType: aws.String("application/octet-stream"),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	bodyBytes, err := ioutil.ReadAll(getObjResp.Body)
+	getObjResp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	check = &schema.Check{}
+
+	if err := proto.Unmarshal(bodyBytes, check); err != nil {
+		return nil, err
+	}
+
+	return check, nil
+}
+
+func (s *S3Store) PutCheckSnapshot(transitionId int64, check *schema.Check) error {
+	snapshotPath := fmt.Sprintf("%s/snapshots/%d.pb", check.Id, transitionId)
+	checkBytes, err := proto.Marshal(check)
+	if err != nil {
+		return err
+	}
+	reader := bytes.NewReader(checkBytes)
+
+	_, err = s.S3Client.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(s.BucketName),
+		Key:    aws.String(snapshotPath),
+		Body:   reader,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
