@@ -35,6 +35,8 @@
 		UserTokenResponse
 		GetTeamRequest
 		GetTeamResponse
+		CreateTeamRequest
+		CreateTeamResponse
 		UpdateTeamRequest
 		UpdateTeamResponse
 		DeleteTeamRequest
