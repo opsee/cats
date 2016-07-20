@@ -20,3 +20,13 @@ type CheckStore interface {
 	GetCheck(user *schema.User, checkId string) (*schema.Check, error)
 	GetChecks(user *schema.User) ([]*schema.Check, error)
 }
+
+type TeamStore interface {
+	WithTX(txfun func(TeamStore) error) error
+	Get(id string) (*schema.Team, error)
+	GetUsers(id string) ([]*schema.User, error)
+	GetInvites(id string) ([]*schema.User, error)
+	Create(team *schema.Team) error
+	Update(team *schema.Team) error
+	Delete(team *schema.Team) error
+}

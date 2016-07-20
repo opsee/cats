@@ -13,11 +13,15 @@ import (
 	log "github.com/opsee/logrus"
 	"github.com/opsee/vaper"
 	"github.com/spf13/viper"
+	"github.com/stripe/stripe-go"
 )
 
 func main() {
 	viper.SetEnvPrefix("cats")
 	viper.AutomaticEnv()
+
+	// initialize stripe with our account key
+	stripe.Key = viper.GetString("stripe_key")
 
 	// initialize vaper with our secret key
 	keyPath := viper.GetString("vape_keyfile")

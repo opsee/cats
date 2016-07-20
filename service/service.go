@@ -16,6 +16,7 @@ import (
 
 type service struct {
 	checkStore  store.CheckStore
+	teamStore   store.TeamStore
 	resultStore results.Store
 }
 
@@ -27,6 +28,7 @@ func New(pgConn string, resultStore results.Store) (*service, error) {
 
 	svc := &service{
 		checkStore: store.NewCheckStore(db),
+		teamStore:  store.NewTeamStore(db),
 		//resultStore: &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))},
 		resultStore: resultStore,
 	}

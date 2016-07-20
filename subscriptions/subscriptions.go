@@ -6,19 +6,22 @@ import (
 	"github.com/opsee/basic/schema"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/sub"
 )
 
 // An opsee subscription plan
 type Plan string
 
 const (
-	BetaPlan      Plan = "beta"
-	DeveloperPlan      = "developer"
-	TeamPlan           = "team"
+	FreePlan      Plan = "free"
+	BetaPlan           = "beta"
+	DeveloperPlan      = "developer_monthly"
+	TeamPlan           = "team_monthly"
 )
 
 var (
 	Plans = []Plan{
+		FreePlan,
 		BetaPlan,
 		DeveloperPlan,
 		TeamPlan,
@@ -40,18 +43,19 @@ func (p Plan) Validate() error {
 // billing permissions. `tokenSource` is an optional string token that represents a payment
 // source. If supplied, it will be applied to the stripe customer as the payment source for the
 // subscription.
-func Create(team *schema.Team, user *schema.User, quantity uint64, tokenSource string) error {
-	if err := user.CheckPermission("billing"); err != nil {
-		return err
-	}
-
-	if err := Plan(team.Subscription).Validate(); err != nil {
+func Create(team *schema.Team, email string, tokenSource string, trialEnd int64) error {
+	if err := Plan(team.SubscriptionPlan).Validate(); err != nil {
 		return err
 	}
 
 	params := &stripe.CustomerParams{
-		Email: user.Email,
-		Plan:  team.Subscription,
+		Email:    email,
+		Plan:     team.SubscriptionPlan,
+		Quantity: uint64(team.SubscriptionQuantity),
+	}
+
+	if trialEnd != 0 {
+		params.TrialEnd = trialEnd
 	}
 
 	if tokenSource != "" {
@@ -66,6 +70,71 @@ func Create(team *schema.Team, user *schema.User, quantity uint64, tokenSource s
 		}
 	}
 
-	_, err := customer.New(params)
-	return err
+	params.AddMeta("customer-id", team.Id)
+	params.AddMeta("team-name", team.Name)
+
+	response, err := customer.New(params)
+	if err != nil {
+		return err
+	}
+
+	team.StripeCustomerId = response.ID
+	if response.Subs == nil {
+		return fmt.Errorf("empty subscription list from stripe")
+	}
+
+	if len(response.Subs.Values) < 1 {
+		return fmt.Errorf("empty subscription list from stripe")
+	}
+
+	subscription := response.Subs.Values[0]
+	team.StripeSubscriptionId = subscription.ID
+	team.SubscriptionStatus = string(subscription.Status)
+
+	return nil
+}
+
+// Update a customer's subscription in stripe
+func Update(team *schema.Team, tokenSource string) error {
+	if err := Plan(team.SubscriptionPlan).Validate(); err != nil {
+		return err
+	}
+
+	if team.StripeCustomerId == "" {
+		return fmt.Errorf("team missing stripe customer_id")
+	}
+
+	if team.StripeSubscriptionId == "" {
+		return fmt.Errorf("team missing stripe subscription_id")
+	}
+
+	params := &stripe.SubParams{
+		Customer: team.StripeCustomerId,
+		Plan:     team.SubscriptionPlan,
+		Quantity: uint64(team.SubscriptionQuantity),
+	}
+
+	if tokenSource != "" {
+		params.Token = tokenSource
+	}
+
+	_, err := sub.Update(team.StripeSubscriptionId, params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Cancel a customer's subscription in stripe
+func Cancel(team *schema.Team) error {
+	if team.StripeSubscriptionId == "" {
+		return fmt.Errorf("team missing stripe subscription_id")
+	}
+
+	if _, err := sub.Cancel(team.StripeSubscriptionId, nil); err != nil {
+		return err
+	}
+
+	return nil
 }
