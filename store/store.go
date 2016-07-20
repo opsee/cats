@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/checks"
 )
@@ -14,4 +16,5 @@ type CheckStore interface {
 	CreateStateTransitionLogEntry(checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error)
 	GetCheckCount(user *schema.User, prorated bool) (float32, error)
 	GetLiveBastions(customerId, checkId string) ([]string, error)
+	GetCheckStateTransitionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error)
 }
