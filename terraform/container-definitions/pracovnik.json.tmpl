@@ -9,12 +9,7 @@
             { "Name": "APPENV", "Value": "${appenv}" }
         ],
         "LogConfiguration": {
-            "LogDriver": "syslog",
-            "Options": {
-                "syslog-address": "${syslog_address}",
-                "tag": "${syslog_tag}",
-                "syslog-tls-skip-verify": "true"
-            }
+            "LogDriver": "json-file"
         }
     }
 ]
