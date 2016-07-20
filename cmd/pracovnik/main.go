@@ -202,82 +202,41 @@ func main() {
 			logger.WithError(err).Error("Error putting transition snapshot to s3")
 			return
 		}
-	})
 
-	publishToNSQ := func(result *schema.CheckResult) {
-		logger := log.WithFields(log.Fields{
-			"customer_id": result.CustomerId,
-			"check_id":    result.CheckId,
-		})
+		if (state.Id == checks.StateFailWait && newStateID == checks.StateFail) ||
+			(state.Id == checks.StatePassWait && newStateID == checks.StateOK) ||
+			(state.Id == checks.StatePassWait && newStateID == checks.StateWarn) {
+			logger.Info("Sending alert.")
 
-		resultBytes, err := proto.Marshal(result)
-		if err != nil {
-			logger.WithError(err).Error("Unable to marshal CheckResult to protobuf")
-		}
-		if err := producer.Publish("alerts", resultBytes); err != nil {
-			logger.WithError(err).Error("Error publishing alert to NSQ.")
-		}
-	}
+			var alertResult *schema.CheckResult
+			// Pick the first failing result or the first passing.
+			if newStateID == checks.StateFail {
+				for _, r := range results {
+					if !r.Passing {
+						alertResult = r
+						break
+					}
+				}
+			} else {
+				for _, r := range results {
+					if r.Passing {
+						alertResult = r
+						break
+					}
+				}
+			}
+			if alertResult == nil {
+				logger.Error("Could not find an appropriate result to send to alert.")
+				return
+			}
 
-	// TODO(greg): We should be able to set hooks on transitions from->to specific
-	// states. Not have to guard in the transition function.
-	//
-	// transition functions need to be able to signal that we couldn't transition state.
-	// in which case we should requeue the message. this could be due to a temporary SQS
-	// failure or an error with the result. maybe logging/instrumenting this is enough?
-	checks.AddStateHook(checks.StateOK, func(id checks.StateId, state *checks.State, result *schema.CheckResult) {
-		logger := log.WithFields(log.Fields{
-			"customer_id":       state.CustomerId,
-			"check_id":          state.CheckId,
-			"min_failing_count": state.MinFailingCount,
-			"min_failing_time":  state.MinFailingTime,
-			"failing_count":     state.FailingCount,
-			"failing_time_s":    state.TimeInState().Seconds(),
-			"old_state":         state.State,
-			"new_state":         id.String(),
-		})
-
-		logger.Infof("check transitioned to passing")
-		// We go FAIL -> PASS_WAIT -> OK or WARN
-		if state.Id == checks.StatePassWait && id == checks.StateOK {
-			publishToNSQ(result)
-		}
-	})
-
-	checks.AddStateHook(checks.StateWarn, func(id checks.StateId, state *checks.State, result *schema.CheckResult) {
-		logger := log.WithFields(log.Fields{
-			"customer_id":       state.CustomerId,
-			"check_id":          state.CheckId,
-			"min_failing_count": state.MinFailingCount,
-			"min_failing_time":  state.MinFailingTime,
-			"failing_count":     state.FailingCount,
-			"failing_time_s":    state.TimeInState().Seconds(),
-			"old_state":         state.State,
-			"new_state":         id.String(),
-		})
-
-		logger.Infof("check transitioned to warning")
-		// We go FAIL -> PASS_WAIT -> OK or WARN
-		if state.Id == checks.StatePassWait && id == checks.StateWarn {
-			publishToNSQ(result)
-		}
-	})
-
-	checks.AddStateHook(checks.StateFail, func(id checks.StateId, state *checks.State, result *schema.CheckResult) {
-		logger := log.WithFields(log.Fields{
-			"customer_id":       state.CustomerId,
-			"check_id":          state.CheckId,
-			"min_failing_count": state.MinFailingCount,
-			"min_failing_time":  state.MinFailingTime,
-			"failing_count":     state.FailingCount,
-			"failing_time_s":    state.TimeInState().Seconds(),
-			"old_state":         state.State,
-			"new_state":         id.String(),
-		})
-
-		logger.Infof("check transitioned to fail")
-		if state.Id == checks.StateFailWait && id == checks.StateFail {
-			publishToNSQ(result)
+			resultBytes, err := proto.Marshal(alertResult)
+			if err != nil {
+				logger.WithError(err).Error("Unable to marshal Check to protobuf")
+			}
+			if err := producer.Publish("alerts", resultBytes); err != nil {
+				logger.WithError(err).Error("Error publishing alert to NSQ.")
+			}
 		}
 	})
 
