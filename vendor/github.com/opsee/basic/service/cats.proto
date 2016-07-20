@@ -30,6 +30,17 @@ message GetCheckResultsResponse {
 	repeated CheckResult results = 1;
 }
 
+message GetCheckStateTransitionsRequest{
+    string check_id = 1;
+    string customer_id = 2;
+    opsee.types.Timestamp AbsoluteStartTime = 3;
+    opsee.types.Timestamp AbsoluteEndTime = 4;
+}
+
+message GetCheckStateTransitionsResponse{
+    repeated CheckStateTransition transitions = 1;
+}
+
 // Customers
 message ListCustomersResponse {
 	repeated Customer customers = 1;
@@ -139,4 +150,5 @@ service Cats {
 	rpc UpdateTeam(UpdateTeamRequest) returns (UpdateTeamResponse) {}
 	rpc DeleteTeam(DeleteTeamRequest) returns (DeleteTeamResponse) {}
 	rpc GetCheckResults(GetCheckResultsRequest) returns (GetCheckResultsResponse) {}
+	rpc GetCheckStateTransitions(GetCheckStateTransitionsRequest) returns (GetCheckStateTransitionsResponse) {}
 }
