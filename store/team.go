@@ -175,7 +175,7 @@ func (q *teamStore) UpdateSubscription(team *schema.Team) error {
 	rows, err := sqlx.NamedQuery(
 		q,
 		`with t as (
-			select subscription_id from team where id = :id
+			select subscription_id from customers where id = :id
 		)
 		update subscriptions set
 		plan = :subscription_plan, stripe_customer_id = :stripe_customer_id, 
