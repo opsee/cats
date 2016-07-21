@@ -169,7 +169,8 @@ func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err e
 
 // GetCheck gets a single check for a customer
 func (q *checkStore) GetCheck(user *schema.User, checkId string) (check *schema.Check, err error) {
-	err = sqlx.Get(q, &check, "SELECT * FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId)
+	check = &schema.Check{}
+	err = q.QueryRowx("SELECT * FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(check)
 	if err != nil {
 		return nil, err
 	}
