@@ -28,5 +28,6 @@ type TeamStore interface {
 	GetInvites(id string) ([]*schema.User, error)
 	Create(team *schema.Team) error
 	Update(team *schema.Team) error
+	UpdateSubscription(team *schema.Team) error
 	Delete(team *schema.Team) error
 }
