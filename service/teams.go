@@ -55,6 +55,13 @@ func (s *service) CreateTeam(ctx context.Context, req *opsee.CreateTeamRequest) 
 		return nil, err
 	}
 
+	checkCount, err := s.checkStore.GetCheckCount(team.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	team.SubscriptionQuantity = checkCount
+
 	if err := subscriptions.Create(team, req.Requestor.Email, req.StripeToken, req.TrialEnd); err != nil {
 		return nil, err
 	}
@@ -95,6 +102,13 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		if currentTeam == nil {
 			return fmt.Errorf("no team found")
 		}
+
+		checkCount, err := s.checkStore.GetCheckCount(req.Team.Id)
+		if err != nil {
+			return err
+		}
+
+		req.Team.SubscriptionQuantity = checkCount
 
 		// update subscription if necessary
 		if currentTeam.SubscriptionPlan != req.Team.SubscriptionPlan || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "" {

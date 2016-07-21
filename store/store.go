@@ -14,11 +14,11 @@ type CheckStore interface {
 	PutMemo(memo *checks.ResultMemo) error
 	GetMemo(checkId, bastionId string) (*checks.ResultMemo, error)
 	CreateStateTransitionLogEntry(checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error)
-	GetCheckCount(user *schema.User, prorated bool) (float32, error)
 	GetLiveBastions(customerId, checkId string) ([]string, error)
 	GetCheckStateTransitionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error)
 	GetCheck(user *schema.User, checkId string) (*schema.Check, error)
 	GetChecks(user *schema.User) ([]*schema.Check, error)
+	GetCheckCount(customerId string) (int32, error)
 }
 
 type TeamStore interface {

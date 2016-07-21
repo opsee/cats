@@ -140,8 +140,14 @@ func (q *checkStore) CreateStateTransitionLogEntry(checkId, customerId string, f
 	return logEntry, nil
 }
 
-func (q *checkStore) GetCheckCount(user *schema.User, prorated bool) (float32, error) {
-	return float32(0), nil
+func (q *checkStore) GetCheckCount(customerId string) (int32, error) {
+	var count int32 = 0
+	err := sqlx.Get(q, &count, "select count(1) from checks where customer_id = $1 and deleted = false", customerId)
+	if err != nil && err != sql.ErrNoRows {
+		return count, err
+	}
+
+	return count, nil
 }
 
 // GetStateTransitionLogEntries returns state transition log entries between a start and end time

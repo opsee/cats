@@ -13,12 +13,10 @@ option (opseeproto.graphql) = true;
 
 message GetCheckCountRequest {
   User user = 1;
-	bool prorated = 2;
 }
 
 message GetCheckCountResponse {
-	float count = 1;
-	bool prorated = 2;
+	int32 count = 1;
 }
 
 message GetCheckResultsRequest {

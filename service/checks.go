@@ -54,15 +54,14 @@ func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountReq
 		return nil, err
 	}
 
-	count, err := s.checkStore.GetCheckCount(req.User, req.Prorated)
+	count, err := s.checkStore.GetCheckCount(req.User.CustomerId)
 	if err != nil {
 		log.WithError(err).Error("db request failed")
 		return nil, err
 	}
 
 	return &opsee.GetCheckCountResponse{
-		Prorated: req.Prorated,
-		Count:    count,
+		Count: int32(count),
 	}, nil
 }
 

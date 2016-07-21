@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/opsee/cats/checks"
+	"github.com/opsee/cats/testutil"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,5 +97,67 @@ func TestTransactionIsolation(t *testing.T) {
 	assert.NotNil(t, state)
 	assert.Equal(t, int32(4), state.FailingCount)
 	assert.Equal(t, int32(4), state.ResponseCount)
+}
 
+func TestCheckCount(t *testing.T) {
+	assert := assert.New(t)
+
+	withCheckFixtures(func(cs CheckStore) {
+		count, err := cs.GetCheckCount(testutil.Checks["1"].CustomerId)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.EqualValues(2, count)
+
+		// non existent customer returns 0
+		count, err = cs.GetCheckCount("11111111-1111-1111-1111-111111111222")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.EqualValues(0, count)
+	})
+}
+
+func withCheckFixtures(testFun func(CheckStore)) {
+	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
+	if err != nil {
+		panic(err)
+	}
+
+	db.MustExec("delete from checks")
+	db.MustExec("delete from check_states")
+	db.MustExec("delete from check_state_memos")
+	db.MustExec("delete from assertions")
+
+	tx, err := db.Beginx()
+	if err != nil {
+		panic(err)
+	}
+	defer tx.Rollback()
+
+	for _, t := range testutil.Checks {
+		rows, err := sqlx.NamedQuery(
+			tx,
+			`INSERT INTO checks (id, min_failing_count, min_failing_time, customer_id,
+			 execution_group_id, name, target_type, target_id) VALUES (:id, :min_failing_count,
+			 :min_failing_time, :customer_id, :execution_group_id, :name, 'target-id', 'target-type')`,
+			t,
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		var sub struct {
+			Id int
+		}
+		for rows.Next() {
+			rows.StructScan(&sub)
+		}
+		rows.Close()
+	}
+
+	// create a new check store with the transaction and give it to our test funcs
+	testFun(&checkStore{tx})
 }
