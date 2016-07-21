@@ -72,3 +72,22 @@ var Invites = map[string]schema.Invite{
 		CustomerId: "11111111-1111-1111-1111-111111111111",
 	},
 }
+
+var Checks = map[string]schema.Check{
+	"1": {
+		Id:               "check-id-1",
+		CustomerId:       "11111111-1111-1111-1111-111111111111",
+		ExecutionGroupId: "11111111-1111-1111-1111-111111111111",
+		Name:             "check 1",
+		MinFailingCount:  1,
+		MinFailingTime:   90,
+	},
+	"2": {
+		Id:               "check-id-2",
+		CustomerId:       "11111111-1111-1111-1111-111111111111",
+		ExecutionGroupId: "11111111-1111-1111-1111-111111111111",
+		Name:             "check 2",
+		MinFailingCount:  1,
+		MinFailingTime:   90,
+	},
+}
