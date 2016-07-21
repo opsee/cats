@@ -60,7 +60,7 @@ func (s *service) CreateTeam(ctx context.Context, req *opsee.CreateTeamRequest) 
 	}
 
 	// update with stripe info
-	if err := s.teamStore.Update(team); err != nil {
+	if err := s.teamStore.UpdateSubscription(team); err != nil {
 		return nil, err
 	}
 
@@ -102,6 +102,11 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 			currentTeam.SubscriptionQuantity = req.Team.SubscriptionQuantity
 
 			err = subscriptions.Update(currentTeam, req.StripeToken)
+			if err != nil {
+				return err
+			}
+
+			err = ts.UpdateSubscription(currentTeam)
 			if err != nil {
 				return err
 			}

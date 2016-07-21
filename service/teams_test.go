@@ -50,6 +50,11 @@ func (q *testTeamStore) Update(team *schema.Team) error {
 	return nil
 }
 
+func (q *testTeamStore) UpdateSubscription(team *schema.Team) error {
+	q.curTeam = team
+	return nil
+}
+
 func (q *testTeamStore) Delete(team *schema.Team) error {
 	q.curTeam = team
 	return nil
