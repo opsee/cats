@@ -111,7 +111,7 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 		req.Team.SubscriptionQuantity = checkCount
 
 		// update subscription if necessary
-		if currentTeam.SubscriptionPlan != req.Team.SubscriptionPlan || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "" {
+		if currentTeam.StripeSubscriptionId != "" && (currentTeam.SubscriptionPlan != req.Team.SubscriptionPlan || currentTeam.SubscriptionQuantity != req.Team.SubscriptionQuantity || req.StripeToken != "") {
 			currentTeam.SubscriptionPlan = req.Team.SubscriptionPlan
 			currentTeam.SubscriptionQuantity = req.Team.SubscriptionQuantity
 
