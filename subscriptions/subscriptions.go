@@ -62,9 +62,14 @@ func Get(team *schema.Team) error {
 		team.SubscriptionPlanAmount = int32(subby.Plan.Amount)
 	}
 
+	cust, err := customer.Get(team.StripeCustomerId, nil)
+	if err != nil {
+		return err
+	}
+
 	// credit card info
-	if subby.Customer != nil && subby.Customer.Sources != nil && len(subby.Customer.Sources.Values) > 0 {
-		source := subby.Customer.Sources.Values[0]
+	if cust.Sources != nil && len(cust.Sources.Values) > 0 {
+		source := cust.Sources.Values[0]
 
 		if source.Card != nil {
 			team.CreditCardInfo = &schema.CreditCardInfo{
