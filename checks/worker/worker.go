@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/checks"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/store"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
@@ -19,9 +20,10 @@ var (
 )
 
 type CheckWorker struct {
-	db      *sqlx.DB
-	context context.Context
-	result  *schema.CheckResult
+	db          *sqlx.DB
+	context     context.Context
+	result      *schema.CheckResult
+	resultStore results.Store
 }
 
 func rollback(logger log.FieldLogger, tx *sqlx.Tx) error {
@@ -40,11 +42,12 @@ func commit(logger log.FieldLogger, tx *sqlx.Tx) error {
 	return err
 }
 
-func NewCheckWorker(db *sqlx.DB, result *schema.CheckResult) *CheckWorker {
+func NewCheckWorker(db *sqlx.DB, rStore results.Store, result *schema.CheckResult) *CheckWorker {
 	return &CheckWorker{
-		db:      db,
-		context: context.Background(),
-		result:  result,
+		db:          db,
+		context:     context.Background(),
+		result:      result,
+		resultStore: rStore,
 	}
 }
 
@@ -86,6 +89,12 @@ func (w *CheckWorker) Execute() (interface{}, error) {
 		logger.Error("Skipping older result because we have a newer result memo.")
 		rollback(logger, tx)
 		return nil, nil
+	}
+
+	err = w.resultStore.PutResult(w.result)
+	if err != nil {
+		logger.WithError(err).Error("Error putting result to result store.")
+		return nil, err
 	}
 
 	memo.FailingCount = int32(w.result.FailingCount())

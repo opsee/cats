@@ -49,7 +49,7 @@ func (s *fakeStore) PutResult(result *schema.CheckResult) error {
 	return nil
 }
 
-func (s *fakeStore) GetResultByCheckId(bastionId, checkId string) ([]*schema.CheckResult, error) {
+func (s *fakeStore) GetResultByCheckId(bastionId, checkId string) (*schema.CheckResult, error) {
 	if s.fail {
 		return nil, errors.New("")
 	}
@@ -57,12 +57,28 @@ func (s *fakeStore) GetResultByCheckId(bastionId, checkId string) ([]*schema.Che
 	return nil, nil
 }
 
+func (s *fakeStore) GetCheckSnapshot(transitionId int64, checkId string) (*schema.Check, error) {
+	if s.fail {
+		return nil, errors.New("")
+	}
+
+	return nil, nil
+}
+
+func (s *fakeStore) PutCheckSnapshot(transitionId int64, check *schema.Check) error {
+	if s.fail {
+		return errors.New("")
+	}
+
+	return nil
+}
+
 func TestDeletedCheck(t *testing.T) {
 	db := testSetupFixtures()
 	db.MustExec("update checks set deleted = true")
 	result := mockResult(2, 1)
 
-	wrkr := NewCheckWorker(db, result)
+	wrkr := NewCheckWorker(db, &fakeStore{false}, result)
 	_, err := wrkr.Execute()
 	assert.Nil(t, err)
 	// make sure no check state has been created
@@ -93,7 +109,7 @@ func TestExistingState(t *testing.T) {
 	err := checkStore.PutState(state)
 	assert.Nil(t, err)
 
-	wrkr := NewCheckWorker(db, result)
+	wrkr := NewCheckWorker(db, &fakeStore{false}, result)
 	_, err = wrkr.Execute()
 	assert.Nil(t, err)
 

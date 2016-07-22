@@ -129,19 +129,12 @@ func main() {
 			return nil
 		}
 
-		task := worker.NewCheckWorker(db, result)
+		task := worker.NewCheckWorker(db, s3Store, result)
 		_, err = task.Execute()
 		if err != nil {
 			logger.WithError(err).Error("Error executing task.")
 			return err
 		}
-
-		go func(r *schema.CheckResult, logger *log.Entry) {
-			err := s3Store.PutResult(r)
-			if err != nil {
-				logger.WithFields(log.Fields{"bucket_name": s3Store.BucketName}).WithError(err).Error("Error putting result to s3")
-			}
-		}(result, logger)
 
 		checkResultsHandled.Inc()
 		return nil
