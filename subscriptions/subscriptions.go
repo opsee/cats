@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/opsee/basic/schema"
+	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/sub"
 )
 
@@ -37,6 +39,65 @@ func (p Plan) Validate() error {
 	}
 
 	return fmt.Errorf("%s is not a valid subscription plan", string(p))
+}
+
+// Fetches subscription, payment source, and invoice info and populates the team struct
+func Get(team *schema.Team) error {
+	if team.StripeCustomerId == "" {
+		return fmt.Errorf("team missing stripe customer_id")
+	}
+
+	if team.StripeSubscriptionId == "" {
+		return fmt.Errorf("team missing stripe subscription_id")
+	}
+
+	subby, err := sub.Get(team.StripeSubscriptionId, nil)
+	if err != nil {
+		return err
+	}
+
+	team.SubscriptionTrialStart = opsee_types.NewTimestamp(subby.TrialStart)
+	team.SubscriptionTrialEnd = opsee_types.NewTimestamp(subby.TrialEnd)
+	if subby.Plan != nil {
+		team.SubscriptionPlanAmount = int32(subby.Plan.Amount)
+	}
+
+	// credit card info
+	if subby.Customer != nil && subby.Customer.Sources != nil && len(subby.Customer.Sources.Values) > 0 {
+		source := subby.Customer.Sources.Values[0]
+
+		if source.Card != nil {
+			team.CreditCardInfo = &schema.CreditCardInfo{
+				Name:     source.Card.Name,
+				Last4:    source.Card.LastFour,
+				ExpMonth: int32(source.Card.Month),
+				ExpYear:  int32(source.Card.Year),
+				Brand:    string(source.Card.Brand),
+			}
+		}
+
+	}
+
+	// upcoming invoice
+	nextInv, err := invoice.GetNext(&stripe.InvoiceParams{
+		Customer: team.StripeCustomerId,
+	})
+	if err != nil {
+		return err
+	}
+	team.NextInvoice = copyInvoice(nextInv)
+
+	// all invoices
+	var invoices []*schema.Invoice
+	invoiceIter := invoice.List(&stripe.InvoiceListParams{
+		Customer: team.StripeCustomerId,
+	})
+	for invoiceIter.Next() {
+		invoices = append(invoices, copyInvoice(invoiceIter.Invoice()))
+	}
+	team.Invoices = invoices
+
+	return nil
 }
 
 // Create a new customer and subscription in stripe. The `user` parameter must be a user with
@@ -137,4 +198,12 @@ func Cancel(team *schema.Team) error {
 	}
 
 	return nil
+}
+
+func copyInvoice(stripeInvoice *stripe.Invoice) *schema.Invoice {
+	invoice := &schema.Invoice{}
+	invoice.Date = opsee_types.NewTimestamp(stripeInvoice.Date)
+	invoice.Amount = int32(stripeInvoice.Total)
+	invoice.Paid = stripeInvoice.Paid
+	return invoice
 }

@@ -7,6 +7,7 @@ import (
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/cats/store"
 	"github.com/opsee/cats/subscriptions"
+	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -19,6 +20,10 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 	t, err := s.teamStore.Get(req.Team.Id)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := subscriptions.Get(t); err != nil {
+		log.WithError(err).Error("error fetching subscription data from stripe")
 	}
 
 	return &opsee.GetTeamResponse{
@@ -69,6 +74,10 @@ func (s *service) CreateTeam(ctx context.Context, req *opsee.CreateTeamRequest) 
 	// update with stripe info
 	if err := s.teamStore.UpdateSubscription(team); err != nil {
 		return nil, err
+	}
+
+	if err := subscriptions.Get(team); err != nil {
+		log.WithError(err).Error("error fetching subscription data from stripe")
 	}
 
 	return &opsee.CreateTeamResponse{
@@ -133,6 +142,10 @@ func (s *service) UpdateTeam(ctx context.Context, req *opsee.UpdateTeamRequest) 
 
 	}); err != nil {
 		return nil, err
+	}
+
+	if err := subscriptions.Get(currentTeam); err != nil {
+		log.WithError(err).Error("error fetching subscription data from stripe")
 	}
 
 	return &opsee.UpdateTeamResponse{
