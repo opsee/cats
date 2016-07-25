@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/opsee/basic/schema"
@@ -208,4 +209,52 @@ func (q *teamStore) Delete(team *schema.Team) error {
 	}
 
 	return nil
+}
+
+// A Paginated list of all teams. It's important to note that pages start at 1, to match
+// parameters from web requests, i.e. pagination on an app page [1] 2 3 4.
+// Per page is limited to 1000.
+func (q *teamStore) List(page, perPage int) ([]*schema.Team, ListMeta, error) {
+	var (
+		teams    []*schema.Team
+		listMeta ListMeta
+		total    uint64
+	)
+
+	if page < 1 {
+		return nil, listMeta, fmt.Errorf("page must start at 1")
+	}
+
+	if perPage > 1000 {
+		return nil, listMeta, fmt.Errorf("perPage is limited to 1000")
+	}
+
+	if err := sqlx.Get(
+		q,
+		&total,
+		`select count(id) from customers where active = true`,
+	); err != nil {
+		return nil, listMeta, err
+	}
+
+	listMeta = ListMeta{
+		Page:    page,
+		PerPage: perPage,
+		Total:   total,
+	}
+
+	if err := sqlx.Select(
+		q,
+		&teams,
+		`select t.id, t.name, s.plan as subscription_plan, s.quantity as subscription_quantity,
+		 s.status as subscription_status, s.stripe_customer_id, s.stripe_subscription_id from
+		 customers as t left join subscriptions as s on t.subscription_id = s.id
+		 where t.active = true limit $1 offset $2`,
+		perPage,
+		page-1,
+	); err != nil && err != sql.ErrNoRows {
+		return nil, listMeta, err
+	}
+
+	return teams, listMeta, nil
 }

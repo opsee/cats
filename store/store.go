@@ -30,4 +30,11 @@ type TeamStore interface {
 	Update(team *schema.Team) error
 	UpdateSubscription(team *schema.Team) error
 	Delete(team *schema.Team) error
+	List(page, perPage int) ([]*schema.Team, ListMeta, error)
+}
+
+type ListMeta struct {
+	Page    int
+	PerPage int
+	Total   uint64
 }

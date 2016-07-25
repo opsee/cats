@@ -61,6 +61,10 @@ func (q *testTeamStore) Delete(team *schema.Team) error {
 	return nil
 }
 
+func (q *testTeamStore) List(page, perPage int) ([]*schema.Team, store.ListMeta, error) {
+	return []*schema.Team{q.curTeam}, store.ListMeta{Page: page, PerPage: perPage, Total: uint64(1)}, nil
+}
+
 type testCheckStore struct{}
 
 func (q *testCheckStore) GetAndLockState(customerId, checkId string) (*checks.State, error) {

@@ -92,6 +92,28 @@ func TestTeamDelete(t *testing.T) {
 	})
 }
 
+func TestTeamList(t *testing.T) {
+	assert := assert.New(t)
+
+	withTeamFixtures(func(q TeamStore) {
+		teams, meta, err := q.List(1, 20)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(1, len(teams))
+		assert.EqualValues(1, meta.Total)
+		assert.EqualValues(1, meta.Page)
+		assert.EqualValues(20, meta.PerPage)
+
+		teams, meta, err = q.List(0, 20)
+		assert.Error(err)
+
+		teams, meta, err = q.List(1, 2000)
+		assert.Error(err)
+	})
+}
+
 func withTeamFixtures(testFun func(TeamStore)) {
 	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
 	if err != nil {
