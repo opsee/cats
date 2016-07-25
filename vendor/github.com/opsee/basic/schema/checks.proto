@@ -41,7 +41,7 @@ message Check {
 	int32 min_failing_count = 12 [(gogoproto.moretags) = "db:\"min_failing_count\""];
 	int64 min_failing_time = 13 [(gogoproto.moretags) = "db:\"min_failing_time\""];
 	int32 failing_count = 14 [(gogoproto.moretags) = "db:\"failing_count\""];
-	int32 response_count = 15 [(gogoproto.moretags) = "db:\"responsec_count\""];
+	int32 response_count = 15 [(gogoproto.moretags) = "db:\"response_count\""];
 	string state = 16 [(gogoproto.moretags) = "db:\"state_name\""];
 }
 
