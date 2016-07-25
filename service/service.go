@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/opsee/basic/grpcutil"
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/basic/tp"
@@ -15,6 +16,7 @@ import (
 )
 
 type service struct {
+	httpServer  *http.Server
 	checkStore  store.CheckStore
 	teamStore   store.TeamStore
 	resultStore results.Store
@@ -27,9 +29,8 @@ func New(pgConn string, resultStore results.Store) (*service, error) {
 	}
 
 	svc := &service{
-		checkStore: store.NewCheckStore(db),
-		teamStore:  store.NewTeamStore(db),
-		//resultStore: &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))},
+		checkStore:  store.NewCheckStore(db),
+		teamStore:   store.NewTeamStore(db),
 		resultStore: resultStore,
 	}
 
@@ -38,17 +39,32 @@ func New(pgConn string, resultStore results.Store) (*service, error) {
 
 // http / grpc multiplexer for http health checks
 func (s *service) StartMux(addr, certfile, certkeyfile string) error {
-	router := tp.NewHTTPRouter(context.Background())
+	// The grpc service
 	server := grpc.NewServer()
-
 	opsee.RegisterCatsServer(server, s)
 	log.Infof("starting cats service at %s", addr)
 
-	httpServer := &http.Server{
+	s.httpServer = &http.Server{
 		Addr:      addr,
-		Handler:   grpcutil.GRPCHandlerFunc(server, router),
+		Handler:   grpcutil.GRPCHandlerFunc(server, s.NewHandler()),
 		TLSConfig: &tls.Config{},
 	}
 
-	return httpServer.ListenAndServeTLS(certfile, certkeyfile)
+	return s.httpServer.ListenAndServeTLS(certfile, certkeyfile)
+}
+
+// Returns a new service http.Handler for testing. Sets up an opsee/tp router, which comes with a basic health endpoint for free.
+// It's going to have at least another endpoint for stripe webhooks
+func (s *service) NewHandler() http.Handler {
+	router := tp.NewHTTPRouter(context.Background())
+	router.Handle("POST", "/hooks/stripe", []tp.DecodeFunc{s.httpLogger(), s.stripeHookDecoder()}, s.stripeHookHandler())
+	return router
+}
+
+// HTTP decoder that logs requests
+func (s *service) httpLogger() tp.DecodeFunc {
+	return func(ctx context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) (context.Context, int, error) {
+		log.Info("http request: ", r.URL.String())
+		return ctx, 0, nil
+	}
 }
