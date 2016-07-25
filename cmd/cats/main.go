@@ -20,8 +20,9 @@ func main() {
 	viper.SetEnvPrefix("cats")
 	viper.AutomaticEnv()
 
-	// initialize stripe with our account key
+	// initialize stripe with our account key, and our service with our webhook password
 	stripe.Key = viper.GetString("stripe_key")
+	service.StripeWebhookPassword = viper.GetString("stripe_webhook_password")
 
 	// initialize vaper with our secret key
 	keyPath := viper.GetString("vape_keyfile")
