@@ -9,6 +9,11 @@ import (
 	"github.com/opsee/cats/checks"
 )
 
+type dbCheck struct {
+	*schema.Check
+	*schema.Target
+}
+
 type checkStore struct {
 	sqlx.Ext
 }
@@ -165,35 +170,41 @@ func (q *checkStore) GetCheckStateTransitionLogEntries(checkId, customerId strin
 
 // GetChecks gets all checks for a customer
 func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err error) {
-	err = sqlx.Select(q, &checks, "SELECT * FROM checks WHERE customer_id=$1 AND deleted=false", user.CustomerId)
+	dbcs := []dbCheck{}
+	err = sqlx.Select(q, &dbcs, "SELECT id, COALESCE(interval, 30) AS interval, check_spec, customer_id, name, execution_group_id, min_failing_count, min_failing_time, target_name, target_type, target_id FROM checks WHERE customer_id=$1 AND deleted=false", user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
 
+	checks = make([]*schema.Check, len(dbcs))
+	for i, c := range dbcs {
+		check := c.Check
+		check.Target = c.Target
+		checks[i] = check
+
+		err = sqlx.Select(q, &check.Assertions, `SELECT key, value, operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return checks, nil
 }
 
 // GetCheck gets a single check for a customer
 func (q *checkStore) GetCheck(user *schema.User, checkId string) (check *schema.Check, err error) {
-	check = &schema.Check{}
-	err = q.QueryRowx("SELECT id, interval, check_spec, customer_id, name, execution_group_id, min_failing_count, min_failing_time FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(check)
+	bullshit := &dbCheck{}
+	err = q.QueryRowx("SELECT id, COALESCE(interval, 30) AS interval, check_spec, customer_id, name, execution_group_id, min_failing_count, min_failing_time, target_name, target_type, target_id FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(bullshit)
 	if err != nil {
 		return nil, err
 	}
 
-	target := &schema.Target{}
-	err = q.QueryRowx("SELECT target_id AS id, target_name AS name, target_type AS type FROM checks WHERE id=$1 AND customer=$2 AND deleted=false", checkId, user.CustomerId).StructScan(target)
-	if err != nil {
-		return nil, err
-	}
-	check.Target = target
+	check = bullshit.Check
+	check.Target = bullshit.Target
 
-	var assertions []*schema.Assertion
-	err = sqlx.Select(q, &assertions, "SELECT * FROM assertions WHERE check_id=$1 AND customer_id=$2", checkId, user.CustomerId)
+	err = sqlx.Select(q, &check.Assertions, `SELECT key, value, operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
 	if err != nil {
 		return nil, err
 	}
-	check.Assertions = assertions
 
 	return check, nil
 }

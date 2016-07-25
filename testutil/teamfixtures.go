@@ -81,6 +81,11 @@ var Checks = map[string]schema.Check{
 		Name:             "check 1",
 		MinFailingCount:  1,
 		MinFailingTime:   90,
+		Target: &schema.Target{
+			Name: "check-target-1",
+			Type: "elb-1",
+			Id:   "target-id-1",
+		},
 	},
 	"2": {
 		Id:               "check-id-2",
@@ -89,5 +94,39 @@ var Checks = map[string]schema.Check{
 		Name:             "check 2",
 		MinFailingCount:  1,
 		MinFailingTime:   90,
+		Target: &schema.Target{
+			Name: "check-target-2",
+			Type: "elb-2",
+			Id:   "target-id-2",
+		},
+	},
+}
+
+var Assertions = map[string][]schema.Assertion{
+	"1": []schema.Assertion{
+		schema.Assertion{
+			Key:          "code",
+			Relationship: "equal",
+			Operand:      "200",
+		},
+		schema.Assertion{
+			Key:          "header",
+			Value:        "Content-Type",
+			Relationship: "equal",
+			Operand:      "application/json",
+		},
+	},
+	"2": []schema.Assertion{
+		schema.Assertion{
+			Key:          "code",
+			Relationship: "equal",
+			Operand:      "200",
+		},
+		schema.Assertion{
+			Key:          "header",
+			Value:        "Content-Type",
+			Relationship: "equal",
+			Operand:      "application/json",
+		},
 	},
 }

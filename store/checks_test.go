@@ -7,6 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/cats/checks"
 	"github.com/opsee/cats/testutil"
 	"github.com/spf13/viper"
@@ -120,6 +121,35 @@ func TestCheckCount(t *testing.T) {
 	})
 }
 
+func TestGetCheck(t *testing.T) {
+	assert := assert.New(t)
+
+	withCheckFixtures(func(cs CheckStore) {
+		user := schema.User{
+			CustomerId: "11111111-1111-1111-1111-111111111111",
+		}
+
+		check, err := cs.GetCheck(&user, "check-id-1")
+		assert.NoError(err)
+
+		assert.Equal("check-id-1", check.Id)
+		assert.Len(check.Assertions, 2)
+		assert.Equal("check-target-1", check.Target.Name)
+	})
+}
+
+func TestGetChecks(t *testing.T) {
+	assert := assert.New(t)
+
+	withCheckFixtures(func(cs CheckStore) {
+		checks, err := cs.GetChecks(&schema.User{
+			CustomerId: "11111111-1111-1111-1111-111111111111",
+		})
+		assert.NoError(err)
+		assert.Len(checks, 2)
+	})
+}
+
 func withCheckFixtures(testFun func(CheckStore)) {
 	db, err := sqlx.Open("postgres", viper.GetString("postgres_conn"))
 	if err != nil {
@@ -137,13 +167,17 @@ func withCheckFixtures(testFun func(CheckStore)) {
 	}
 	defer tx.Rollback()
 
-	for _, t := range testutil.Checks {
+	for k, t := range testutil.Checks {
+		bullshit := dbCheck{
+			&t,
+			t.Target,
+		}
 		rows, err := sqlx.NamedQuery(
 			tx,
 			`INSERT INTO checks (id, min_failing_count, min_failing_time, customer_id,
-			 execution_group_id, name, target_type, target_id) VALUES (:id, :min_failing_count,
-			 :min_failing_time, :customer_id, :execution_group_id, :name, 'target-id', 'target-type')`,
-			t,
+			 execution_group_id, name, target_type, target_id, target_name) VALUES (:id, :min_failing_count,
+			 :min_failing_time, :customer_id, :execution_group_id, :name, :target_type, :target_id, :target_name)`,
+			bullshit,
 		)
 		if err != nil {
 			panic(err)
@@ -156,6 +190,25 @@ func withCheckFixtures(testFun func(CheckStore)) {
 			rows.StructScan(&sub)
 		}
 		rows.Close()
+
+		for _, a := range testutil.Assertions[k] {
+			ca := struct {
+				schema.Check
+				schema.Assertion
+			}{t, a}
+
+			rows, err = sqlx.NamedQuery(
+				tx,
+				`INSERT INTO assertions (check_id, customer_id, key, value, relationship, operand)
+			VALUES (:id, :customer_id, :key, :value, :relationship, :operand)`,
+				ca,
+			)
+			if err != nil {
+				panic(err)
+			}
+			rows.Close()
+		}
+
 	}
 
 	// create a new check store with the transaction and give it to our test funcs
