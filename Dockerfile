@@ -18,6 +18,8 @@ ENV CATS_SLACK_URL=""
 ENV CATS_STRIPE_KEY=""
 ENV CATS_STRIPE_WEBHOOK_PASSWORD=""
 ENV CATS_RESULTS_S3_BUCKET=""
+ENV CATS_NEWRELIC_KEY=""
+ENV CATS_NEWRELIC_BETA_TOKEN=""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
