@@ -161,3 +161,25 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 
 	return &opsee.GetCheckStateTransitionsResponse{logEntries}, nil
 }
+
+func (s *service) GetCheckSnapshot(ctx context.Context, req *opsee.GetCheckSnapshotRequest) (*opsee.GetCheckSnapshotResponse, error) {
+	user := req.Requestor
+	if user == nil {
+		return nil, fmt.Errorf("Request requires a user.")
+	}
+
+	if err := user.Validate(); err != nil {
+		return nil, err
+	}
+
+	ss, err := s.resultStore.GetCheckSnapshot(req.TransitionId, req.CheckId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &opsee.GetCheckSnapshotResponse{
+		Check: ss,
+	}
+
+	return resp, nil
+}
