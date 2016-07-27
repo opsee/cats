@@ -7,15 +7,8 @@ import (
 
 var (
 	Client  *mandrill.Client
-	BaseURL string
+	BaseURL = "https://app.opsee.com"
 )
-
-func init() {
-	if BaseURL == "" {
-		log.Info("no base url configured for mandrill messages, defaulting to https://app.opsee.com")
-		BaseURL = "https://app.opsee.com"
-	}
-}
 
 func Send(toEmail, toName, templateName string, mergeVars map[string]interface{}) ([]*mandrill.Response, error) {
 	if Client == nil {
