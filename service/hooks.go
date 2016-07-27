@@ -57,8 +57,7 @@ func (s *service) stripeHookHandler() tp.HandleFunc {
 			return nil, http.StatusBadRequest, fmt.Errorf("can't decode stripe event from context")
 		}
 
-		log.Infof("got stripe event: %#v", event)
-
+		s.sluiceClient.Send("stripe_hook", event)
 		return map[string]bool{"ok": true}, http.StatusOK, nil
 	}
 }

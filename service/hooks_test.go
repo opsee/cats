@@ -36,7 +36,9 @@ func TestStripeHook(t *testing.T) {
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("stripe:kitties"))))
 
 	w := httptest.NewRecorder()
-	s := &service{}
+	s := &service{
+		sluiceClient: &testSluiceClient{},
+	}
 	h := s.NewHandler()
 
 	h.ServeHTTP(w, req)

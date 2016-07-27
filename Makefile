@@ -35,7 +35,7 @@ build: deps $(APPENV)
 		quay.io/opsee/build-go:proto16
 	docker build -t quay.io/opsee/$(PROJECT):$(GITCOMMIT) .
 
-run: build $(APPENV)
+run: $(APPENV)
 	docker run \
 		--link $(PROJECT)_postgresql:postgresql \
 		--env-file ./$(APPENV) \
@@ -43,6 +43,7 @@ run: build $(APPENV)
 		-e AWS_DEFAULT_REGION \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
+		-p 9101:9101 \
 		--rm \
 		quay.io/opsee/$(PROJECT):$(GITCOMMIT)
 

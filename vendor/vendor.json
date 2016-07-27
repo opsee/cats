@@ -175,6 +175,13 @@
 			"revisionTime": "2016-06-14T21:42:08Z"
 		},
 		{
+			"checksumSHA1": "uwBlYiVD+INZV5a8lz0GVdT7eXE=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/aws/aws-sdk-go/service/kinesis",
+			"path": "github.com/aws/aws-sdk-go/service/kinesis",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
 			"checksumSHA1": "68YN+UopWOSISIcQQ6zSVbyaDzQ=",
 			"path": "github.com/aws/aws-sdk-go/service/s3",
 			"revision": "395f62e545197d012698f2ef9814c2f4bc15f02b",
@@ -185,6 +192,13 @@
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "3ac7bf7a47d159a033b107610db8a1b6575507a4",
 			"revisionTime": "2016-02-29T21:34:45Z"
+		},
+		{
+			"checksumSHA1": "uB9mw9vMHYJlJlmTBstl4Pi8ZwU=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/cenkalti/backoff",
+			"path": "github.com/cenkalti/backoff",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
 		},
 		{
 			"checksumSHA1": "Fa/Hw0ByZgcIDU5iG+Jt0MdeYYg=",
@@ -266,10 +280,18 @@
 			"revisionTime": "2016-02-22T23:24:41Z"
 		},
 		{
-			"checksumSHA1": "8oKBuAPKT7noCrssdsxPRp6/vxk=",
+			"checksumSHA1": "5MVpi9U1WCrzZ1VMMn61Fc+trE0=",
+			"origin": "github.com/opsee/cats/vendor/github.com/golang/protobuf/proto",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "9e6977f30c91c78396e719e164e57f9287fff42c",
-			"revisionTime": "2016-05-24T15:56:25-04:00"
+			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+			"revisionTime": "2016-07-27T10:26:17-07:00"
+		},
+		{
+			"checksumSHA1": "x9zGdhDhjnJovsld5QnM5ORfTVI=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/grepory/scheduler",
+			"path": "github.com/grepory/scheduler",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
 		},
 		{
 			"checksumSHA1": "PF8QKs8z1YaNGjTbXqeFsMs30aE=",
@@ -498,6 +520,49 @@
 			"path": "github.com/opsee/basic/tp",
 			"revision": "a595e6c48ab4fe6632c7d0230d448788140543a9",
 			"revisionTime": "2016-07-25T09:26:10-07:00"
+		},
+		{
+			"checksumSHA1": "a03x1RbBIGcQb+rKEvajLtc14FE=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch",
+			"path": "github.com/opsee/gmunch",
+			"revision": "736551993101f0681be8e4560cb18c39b71a7fd7",
+			"revisionTime": "2016-07-27T15:24:32-07:00"
+		},
+		{
+			"checksumSHA1": "uI6Bq8vjMsDjECXNYutl7LzrEPc=",
+			"path": "github.com/opsee/gmunch/client",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
+			"checksumSHA1": "/CP93p2UXkE3vF/vnSyodTRxmbA=",
+			"path": "github.com/opsee/gmunch/consumer/kinesis",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
+			"checksumSHA1": "tL+G3DkXO54usj0QXpifzHjGN00=",
+			"path": "github.com/opsee/gmunch/producer",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
+			"checksumSHA1": "CpLXfbyd3/Mnacu/RugpbVIp6Bs=",
+			"path": "github.com/opsee/gmunch/producer/kinesis",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
+			"checksumSHA1": "9osiatcKVA+fTSmcLVBm4IC01/0=",
+			"path": "github.com/opsee/gmunch/server",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
+			"checksumSHA1": "fxQoa/Pk+p+PSsn7IJSGtJu75UY=",
+			"path": "github.com/opsee/gmunch/worker",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
 		},
 		{
 			"checksumSHA1": "4SRqRNsZ2S+7ZXFbHn/4NxrflLU=",
