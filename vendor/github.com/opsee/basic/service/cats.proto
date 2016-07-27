@@ -157,6 +157,16 @@ message GetChecksResponse {
 	repeated Check checks = 1;
 }
 
+message GetCheckSnapshotRequest {
+	User requestor = 1;
+	string check_id = 2;
+	int64 transition_id = 3;
+}
+
+message GetCheckSnapshotResponse {
+	Check check = 1;
+}
+
 service Cats {
 	rpc GetCheckCount(GetCheckCountRequest) returns (GetCheckCountResponse) {}
 	rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
@@ -171,4 +181,5 @@ service Cats {
 	rpc GetCheckResults(GetCheckResultsRequest) returns (GetCheckResultsResponse) {}
 	rpc GetCheckStateTransitions(GetCheckStateTransitionsRequest) returns (GetCheckStateTransitionsResponse) {}
 	rpc GetChecks(GetChecksRequest) returns (GetChecksResponse) {}
+	rpc GetCheckSnapshot(GetCheckSnapshotRequest) returns (GetCheckSnapshotResponse) {}
 }

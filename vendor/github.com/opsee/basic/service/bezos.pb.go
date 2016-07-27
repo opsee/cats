@@ -43,6 +43,8 @@
 		DeleteTeamResponse
 		GetChecksRequest
 		GetChecksResponse
+		GetCheckSnapshotRequest
+		GetCheckSnapshotResponse
 		CheckResourceResponse
 		ResourceResponse
 		CheckResourceRequest
@@ -63,6 +65,16 @@
 		QueryResult
 		GetMetricsRequest
 		GetMetricsResponse
+		GroupBy
+		Sampling
+		Aggregator
+		StringList
+		QueryMetric
+		Datapoint
+		Result
+		Query
+		QueryMetricsRequest
+		QueryMetricsResponse
 		EnhancedCombatModeRequest
 		EnhancedCombatModeResponse
 		GetRoleStackRequest
