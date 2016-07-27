@@ -1,8 +1,6 @@
 package testutil
 
-import (
-	"github.com/opsee/basic/schema"
-)
+import "github.com/opsee/basic/schema"
 
 var Teams = map[string]schema.Team{
 	"active": {
@@ -95,7 +93,6 @@ var Checks = map[string]schema.Check{
 		MinFailingCount:  1,
 		MinFailingTime:   90,
 		Target: &schema.Target{
-			Name: "check-target-2",
 			Type: "elb-2",
 			Id:   "target-id-2",
 		},

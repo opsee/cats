@@ -183,20 +183,19 @@ func main() {
 				results[i] = result
 			}
 		}
-		/*
-			check, err := checkStore.GetCheck(&schema.User{CustomerId: state.CustomerId}, state.CheckId)
-			if err != nil {
-				logger.WithError(err).Error("Error getting check from db: %s", state.CheckId)
-				return
-			}
-			check.Results = results
 
-			err = s3Store.PutCheckSnapshot(logEntry.Id, check)
-			if err != nil {
-				logger.WithError(err).Error("Error putting transition snapshot to s3")
-				return
-			}
-		*/
+		check, err := checkStore.GetCheck(&schema.User{CustomerId: state.CustomerId}, state.CheckId)
+		if err != nil {
+			logger.WithError(err).Error("Error getting check from db: ", state.CheckId)
+			return
+		}
+		check.Results = results
+
+		err = s3Store.PutCheckSnapshot(logEntry.Id, check)
+		if err != nil {
+			logger.WithError(err).Error("Error putting transition snapshot to s3")
+			return
+		}
 
 		if (state.Id == checks.StateFailWait && newStateID == checks.StateFail) ||
 			(state.Id == checks.StatePassWait && newStateID == checks.StateOK) ||

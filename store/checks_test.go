@@ -131,10 +131,10 @@ func TestGetCheck(t *testing.T) {
 
 		check, err := cs.GetCheck(&user, "check-id-1")
 		assert.NoError(err)
-
 		assert.Equal("check-id-1", check.Id)
 		assert.Len(check.Assertions, 2)
 		assert.Equal("check-target-1", check.Target.Name)
+		assert.NotNil(check.Spec)
 	})
 }
 
@@ -147,6 +147,10 @@ func TestGetChecks(t *testing.T) {
 		})
 		assert.NoError(err)
 		assert.Len(checks, 2)
+
+		for _, c := range checks {
+			assert.NotNil(c.Spec)
+		}
 	})
 }
 
@@ -190,6 +194,9 @@ func withCheckFixtures(testFun func(CheckStore)) {
 			rows.StructScan(&sub)
 		}
 		rows.Close()
+
+		spec := `{"value": {"path": "/", "port": 443, "verb": "GET", "protocol": "https"}, "type_url": "HttpCheck"}`
+		sqlx.MustExec(tx, `UPDATE checks SET check_spec=$1 WHERE id=$2`, spec, t.Id)
 
 		for _, a := range testutil.Assertions[k] {
 			ca := struct {

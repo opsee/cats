@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -171,7 +172,7 @@ func (q *checkStore) GetCheckStateTransitionLogEntries(checkId, customerId strin
 // GetChecks gets all checks for a customer
 func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err error) {
 	dbcs := []dbCheck{}
-	err = sqlx.Select(q, &dbcs, "SELECT id, COALESCE(interval, 30) AS interval, check_spec, customer_id, name, execution_group_id, min_failing_count, min_failing_time, target_name, target_type, target_id FROM checks WHERE customer_id=$1 AND deleted=false", user.CustomerId)
+	err = sqlx.Select(q, &dbcs, "SELECT id, COALESCE(interval, 30) AS interval, customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id FROM checks WHERE customer_id=$1 AND deleted=false", user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -182,9 +183,29 @@ func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err e
 		check.Target = c.Target
 		checks[i] = check
 
-		err = sqlx.Select(q, &check.Assertions, `SELECT key, value, operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
+		err = sqlx.Select(q, &check.Assertions, `SELECT key, COALESCE(value, '') AS value, COALESCE(operand, '') AS operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
 		if err != nil {
 			return nil, err
+		}
+
+		var specStr string
+		err = sqlx.Get(q, &specStr, "SELECT check_spec FROM checks WHERE id=$1 AND customer_id=$2", check.Id, check.CustomerId)
+		if err != nil {
+			return nil, err
+		}
+
+		typedCheck, err := schema.UnmarshalCrappyCheckSpecAnyJSON([]byte(specStr))
+		if err != nil {
+			return nil, err
+		}
+
+		switch t := typedCheck.(type) {
+		case *schema.HttpCheck:
+			check.Spec = &schema.Check_HttpCheck{HttpCheck: t}
+		case *schema.CloudWatchCheck:
+			check.Spec = &schema.Check_CloudwatchCheck{CloudwatchCheck: t}
+		default:
+			return nil, fmt.Errorf("Unsupported check spec type: %v", check.CheckSpec)
 		}
 	}
 	return checks, nil
@@ -193,7 +214,7 @@ func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err e
 // GetCheck gets a single check for a customer
 func (q *checkStore) GetCheck(user *schema.User, checkId string) (check *schema.Check, err error) {
 	bullshit := &dbCheck{}
-	err = q.QueryRowx("SELECT id, COALESCE(interval, 30) AS interval, check_spec, customer_id, name, execution_group_id, min_failing_count, min_failing_time, target_name, target_type, target_id FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(bullshit)
+	err = q.QueryRowx("SELECT id, COALESCE(interval, 30) AS interval, customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(bullshit)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +222,27 @@ func (q *checkStore) GetCheck(user *schema.User, checkId string) (check *schema.
 	check = bullshit.Check
 	check.Target = bullshit.Target
 
-	err = sqlx.Select(q, &check.Assertions, `SELECT key, value, operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
+	var specStr string
+	err = sqlx.Get(q, &specStr, "SELECT check_spec FROM checks WHERE id=$1 AND customer_id=$2", checkId, user.CustomerId)
+	if err != nil {
+		return nil, err
+	}
+
+	typedCheck, err := schema.UnmarshalCrappyCheckSpecAnyJSON([]byte(specStr))
+	if err != nil {
+		return nil, err
+	}
+
+	switch t := typedCheck.(type) {
+	case *schema.HttpCheck:
+		check.Spec = &schema.Check_HttpCheck{HttpCheck: t}
+	case *schema.CloudWatchCheck:
+		check.Spec = &schema.Check_CloudwatchCheck{CloudwatchCheck: t}
+	default:
+		return nil, fmt.Errorf("Unsupported check spec type: %v", check.CheckSpec)
+	}
+
+	err = sqlx.Select(q, &check.Assertions, `SELECT key, COALESCE(value, '') AS value, COALESCE(operand, '') AS operand, relationship FROM assertions WHERE check_id=$1 AND customer_id=$2`, check.Id, check.CustomerId)
 	if err != nil {
 		return nil, err
 	}
