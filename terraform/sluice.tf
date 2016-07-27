@@ -5,7 +5,7 @@ resource "template_file" "sluice_containers" {
         version = "${var.image_version}"
         appenv = "${format("catsenv-%s-us-west-2", var.environment)}"
         syslog_address = "${var.syslog_address}"
-        syslog_tag = "${format("pracovnik-%s", var.image_version)}"
+        syslog_tag = "${format("sluice-%s", var.image_version)}"
     }
 }
 
