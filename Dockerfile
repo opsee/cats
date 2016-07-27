@@ -32,6 +32,6 @@ COPY cert.pem /
 COPY key.pem /
 COPY vape.test.key /
 
-EXPOSE 9101
+EXPOSE 9101 9107
 
 CMD ["/cats"]
