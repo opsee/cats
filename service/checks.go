@@ -92,6 +92,7 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 					"check_id":   req.CheckId,
 					"bastion_id": bastionId,
 				}).WithError(err).Error("Error getting result from result store.")
+				continue
 			}
 			results[idx] = result
 			wg.Done()
