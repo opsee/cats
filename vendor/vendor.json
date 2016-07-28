@@ -522,11 +522,11 @@
 			"revisionTime": "2016-07-27T15:52:36-07:00"
 		},
 		{
-			"checksumSHA1": "Oh9U/SHS+QXTViaga6Y7Ws3Ki9A=",
+			"checksumSHA1": "KwX9oMGN7xzIwgF4AhR5iIsU0Uo=",
 			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch",
 			"path": "github.com/opsee/gmunch",
-			"revision": "3c8be316678dac45dfaec964da0da8dabe529f17",
-			"revisionTime": "2016-07-28T10:22:48-07:00"
+			"revision": "e508cca0020ebfb4749c6d118fe33ac02a913432",
+			"revisionTime": "2016-07-28T12:07:33-07:00"
 		},
 		{
 			"checksumSHA1": "uI6Bq8vjMsDjECXNYutl7LzrEPc=",
