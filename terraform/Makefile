@@ -2,10 +2,15 @@ ENVIRONMENT ?= production
 STACK ?= cats
 
 %-plan: %.tfvars .terraform/terraform.tfstate
+ifdef SERVICE
+	terraform plan -var-file=$(*).tfvars -target=aws_ecs_service.$(SERVICE) -out $(*).plan
+else
 	terraform plan -var-file=$(*).tfvars -out $(*).plan
+endif
 
 %-apply: %.plan
-	terraform apply $(*).plan
+	echo hi
+	# terraform apply $(*).plan
 
 plan: $(ENVIRONMENT)-plan
 
