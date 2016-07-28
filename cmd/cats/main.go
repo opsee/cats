@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	newrelic "github.com/newrelic/go-agent"
 	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/service"
 	"github.com/opsee/cats/servicer"
@@ -46,13 +47,19 @@ func main() {
 		SlackUrl:    viper.GetString("slack_url"),
 	})
 
-	//resultStore := &results.DynamoStore{dynamodb.New(session.New(aws.NewConfig().WithRegion("us-west-2")))}
 	resultStore := &results.S3Store{
 		BucketName: viper.GetString("results_s3_bucket"),
 		S3Client:   s3.New(session.New(aws.NewConfig().WithRegion("us-west-2"))),
 	}
 
-	svc, err := service.New(viper.GetString("postgres_conn"), resultStore)
+	agentConfig := newrelic.NewConfig("Cats", viper.GetString("newrelic_key"))
+	agentConfig.BetaToken = viper.GetString("newrelic_beta_token")
+	agent, err := newrelic.NewApplication(agentConfig)
+	if err != nil {
+		log.WithError(err).Fatal("Unable to start service.")
+	}
+
+	svc, err := service.New(viper.GetString("postgres_conn"), resultStore, agent)
 	if err != nil {
 		log.WithError(err).Fatal("Unable to start service.")
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	newrelic "github.com/newrelic/go-agent"
 	"github.com/opsee/basic/grpcutil"
 	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/basic/tp"
@@ -17,14 +18,15 @@ import (
 )
 
 type service struct {
-	httpServer   *http.Server
-	checkStore   store.CheckStore
-	teamStore    store.TeamStore
-	resultStore  results.Store
-	sluiceClient sluice.Client
+	httpServer    *http.Server
+	checkStore    store.CheckStore
+	teamStore     store.TeamStore
+	resultStore   results.Store
+	sluiceClient  sluice.Client
+	newrelicAgent newrelic.Application
 }
 
-func New(pgConn string, resultStore results.Store) (*service, error) {
+func New(pgConn string, resultStore results.Store, newrelicAgent newrelic.Application) (*service, error) {
 	db, err := store.NewPostgres(pgConn)
 	if err != nil {
 		return nil, err
@@ -38,10 +40,11 @@ func New(pgConn string, resultStore results.Store) (*service, error) {
 	}
 
 	svc := &service{
-		checkStore:   store.NewCheckStore(db),
-		teamStore:    store.NewTeamStore(db),
-		resultStore:  resultStore,
-		sluiceClient: sluiceClient,
+		checkStore:    store.NewCheckStore(db),
+		teamStore:     store.NewTeamStore(db),
+		resultStore:   resultStore,
+		sluiceClient:  sluiceClient,
+		newrelicAgent: newrelicAgent,
 	}
 
 	return svc, nil
