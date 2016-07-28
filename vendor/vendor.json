@@ -287,6 +287,12 @@
 			"revisionTime": "2016-07-27T10:26:17-07:00"
 		},
 		{
+			"checksumSHA1": "wtUJRtb2jtPzrEacdsA+JRxMz2k=",
+			"path": "github.com/golang/protobuf/ptypes/struct",
+			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+			"revisionTime": "2016-07-27T10:26:17-07:00"
+		},
+		{
 			"checksumSHA1": "x9zGdhDhjnJovsld5QnM5ORfTVI=",
 			"origin": "github.com/opsee/gmunch/vendor/github.com/grepory/scheduler",
 			"path": "github.com/grepory/scheduler",
@@ -437,6 +443,54 @@
 			"path": "github.com/mreiferson/go-snappystream/snappy-go",
 			"revision": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504",
 			"revisionTime": "2015-04-16T23:44:20Z"
+		},
+		{
+			"checksumSHA1": "KAxJX6H33Wbhf/NpVHpDvpw6Fno=",
+			"path": "github.com/newrelic/go-agent",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "l9F3/eKDo3AqmlJvH8vPVO/5jS4=",
+			"path": "github.com/newrelic/go-agent/attributes",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "f5cuSOGr60DyojAZZ+ti9p/mBZA=",
+			"path": "github.com/newrelic/go-agent/datastore",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "9t42VagNdRGpNEv673h+fv2szc4=",
+			"path": "github.com/newrelic/go-agent/internal",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "mkbupMdy+cF7xyo8xW0A6Bq15k4=",
+			"path": "github.com/newrelic/go-agent/internal/jsonx",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "ywxlVKtGArJ2vDfH1rAqEFwSGds=",
+			"path": "github.com/newrelic/go-agent/internal/logger",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "joSrZEftQjYC8nSxaqClUkQEOEY=",
+			"path": "github.com/newrelic/go-agent/internal/sysinfo",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
+		},
+		{
+			"checksumSHA1": "ZLscFEsIjg58egxvQdrGr/VeXNg=",
+			"path": "github.com/newrelic/go-agent/internal/utilization",
+			"revision": "ab79b7bb92368a41c6b4bd76b96059bf95ed473c",
+			"revisionTime": "2016-07-21T15:27:16-07:00"
 		},
 		{
 			"checksumSHA1": "yujmpVvIXpf6DEsVy5BJr2nCtp8=",

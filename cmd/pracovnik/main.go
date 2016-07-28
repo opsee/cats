@@ -14,6 +14,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	newrelic "github.com/newrelic/go-agent"
 	"github.com/nsqio/go-nsq"
 	"github.com/opsee/basic/schema"
 	opsee "github.com/opsee/basic/service"
@@ -105,7 +106,14 @@ func main() {
 		BucketName: viper.GetString("results_s3_bucket"),
 	}
 
-	catsSvc, err := service.New(viper.GetString("postgres_conn"), s3Store)
+	agentConfig := newrelic.NewConfig("Cats", viper.GetString("newrelic_key"))
+	agentConfig.BetaToken = viper.GetString("newrelic_beta_token")
+	agent, err := newrelic.NewApplication(agentConfig)
+	if err != nil {
+		log.WithError(err).Fatal("Unable to start service.")
+	}
+
+	catsSvc, err := service.New(viper.GetString("postgres_conn"), s3Store, agent)
 	if err != nil {
 		log.WithError(err).Fatal("Can't create cats service")
 	}

@@ -13,6 +13,9 @@ import (
 )
 
 func (s *service) GetChecks(ctx context.Context, req *opsee.GetChecksRequest) (*opsee.GetChecksResponse, error) {
+	agent := s.newrelicAgent.StartTransaction("GetChecks", nil, nil)
+	defer agent.End()
+
 	if req.Requestor == nil {
 		log.Error("no user in request")
 		return nil, fmt.Errorf("user is required")
@@ -23,7 +26,11 @@ func (s *service) GetChecks(ctx context.Context, req *opsee.GetChecksRequest) (*
 		return nil, err
 	}
 
+	agent.AddAttribute("user_email", req.Requestor.Email)
+
 	if req.CheckId != "" {
+		defer agent.EndSegment(agent.StartSegment(), "checkStore.GetCheck")
+
 		checkId := req.CheckId
 		check, err := s.checkStore.GetCheck(req.Requestor, checkId)
 		if err != nil {
@@ -33,6 +40,8 @@ func (s *service) GetChecks(ctx context.Context, req *opsee.GetChecksRequest) (*
 
 		return &opsee.GetChecksResponse{[]*schema.Check{check}}, nil
 	}
+
+	defer agent.EndSegment(agent.StartSegment(), "checkStore.GetChecks")
 
 	checks, err := s.checkStore.GetChecks(req.Requestor)
 	if err != nil {
@@ -66,6 +75,9 @@ func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountReq
 }
 
 func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResultsRequest) (response *opsee.GetCheckResultsResponse, err error) {
+	agent := s.newrelicAgent.StartTransaction("GetChecks", nil, nil)
+	defer agent.End()
+
 	if req.CustomerId == "" {
 		return nil, fmt.Errorf("Request missing CustomerID")
 	}
@@ -74,11 +86,13 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 		return nil, fmt.Errorf("Request missing CheckID")
 	}
 
+	defer agent.EndSegment(agent.StartSegment(), "checkStore.GetLiveBastions")
 	bastions, err := s.checkStore.GetLiveBastions(req.CustomerId, req.CheckId)
 	if err != nil {
 		return nil, err
 	}
 
+	defer agent.EndSegment(agent.StartSegment(), "resultStore.GetResultByCheckId")
 	results := make([]*schema.CheckResult, len(bastions))
 	wg := &sync.WaitGroup{}
 	for i, b := range bastions {
