@@ -9,8 +9,7 @@ else
 endif
 
 %-apply: %.plan
-	echo hi
-	# terraform apply $(*).plan
+	terraform apply $(*).plan
 
 plan: $(ENVIRONMENT)-plan
 
