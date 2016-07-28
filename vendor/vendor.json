@@ -530,39 +530,45 @@
 		},
 		{
 			"checksumSHA1": "uI6Bq8vjMsDjECXNYutl7LzrEPc=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/client",
 			"path": "github.com/opsee/gmunch/client",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
-			"checksumSHA1": "/CP93p2UXkE3vF/vnSyodTRxmbA=",
+			"checksumSHA1": "1bZ4RThtUfTOcRw3iX5i2lq4Mfc=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/consumer/kinesis",
 			"path": "github.com/opsee/gmunch/consumer/kinesis",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
 			"checksumSHA1": "tL+G3DkXO54usj0QXpifzHjGN00=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/producer",
 			"path": "github.com/opsee/gmunch/producer",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
-			"checksumSHA1": "CpLXfbyd3/Mnacu/RugpbVIp6Bs=",
+			"checksumSHA1": "G51t+TFL8HGyPjHH27JJ8IWzvAI=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/producer/kinesis",
 			"path": "github.com/opsee/gmunch/producer/kinesis",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
 			"checksumSHA1": "9osiatcKVA+fTSmcLVBm4IC01/0=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/server",
 			"path": "github.com/opsee/gmunch/server",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
 			"checksumSHA1": "fxQoa/Pk+p+PSsn7IJSGtJu75UY=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/worker",
 			"path": "github.com/opsee/gmunch/worker",
-			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
-			"revisionTime": "2016-06-29T14:30:29-07:00"
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
 			"checksumSHA1": "4SRqRNsZ2S+7ZXFbHn/4NxrflLU=",
