@@ -13,6 +13,12 @@ import (
 	"github.com/stripe/stripe-go"
 )
 
+type testSluiceClient struct{}
+
+func (s *testSluiceClient) Send(name string, data interface{}) error {
+	return nil
+}
+
 type testTeamStore struct {
 	curTeam *schema.Team
 }

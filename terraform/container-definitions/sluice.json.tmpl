@@ -1,0 +1,25 @@
+[
+    {
+        "Name": "sluice",
+        "Image": "quay.io/opsee/cats:${version}",
+        "Memory": 128,
+        "Essential": true,
+        "Command": ["/run.sh", "sluice"],
+        "Environment": [
+            { "Name": "APPENV", "Value": "${appenv}" }
+        ],
+        "PortMappings": [{
+            "hostPort": 9107,
+            "containerPort": 9107,
+            "protocol": "tcp"
+        }],
+        "LogConfiguration": {
+            "LogDriver": "syslog",
+            "Options": {
+                "syslog-address": "${syslog_address}",
+                "tag": "${syslog_tag}",
+                "syslog-tls-skip-verify": "true"
+           }
+        }
+    }
+]

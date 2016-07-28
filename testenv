@@ -1,5 +1,13 @@
-CATS_ADDRESS=:9096
+CATS_ADDRESS=:9101
 CATS_POSTGRES_CONN=postgres://postgres:postgres@postgresql/cats_test?sslmode=disable
 CATS_NSQLOOKUPD_ADDRS=http://lookupd:4161
 CATS_MAX_TASKS=1
 CATS_STRIPE_KEY=sk_test_3EbpLJOMqaOUgVHHEJLFWx5j
+CATS_OPSEE_HOST=https://app.opsee.com
+CATS_MANDRILL_KEY=
+CATS_LOG_LEVEL=info
+CATS_KINESIS_STREAM=sluice
+CATS_ETCD_ADDRESS=http://etcd:2379
+CATS_SHARD_PATH=/opsee.co/sluice/shards
+CATS_SLUICE_ADDRESS=:9107
+CATS_SLACK_URL=

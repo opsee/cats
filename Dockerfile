@@ -20,6 +20,10 @@ ENV CATS_STRIPE_WEBHOOK_PASSWORD=""
 ENV CATS_RESULTS_S3_BUCKET=""
 ENV CATS_NEWRELIC_KEY=""
 ENV CATS_NEWRELIC_BETA_TOKEN=""
+ENV CATS_LOG_LEVEL=""
+ENV CATS_KINESIS_STREAM=""
+ENV CATS_SHARD_PATH=""
+ENV CATS_SLUICE_ADDRESS=""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
@@ -32,6 +36,6 @@ COPY cert.pem /
 COPY key.pem /
 COPY vape.test.key /
 
-EXPOSE 9101
+EXPOSE 9101 9107
 
 CMD ["/cats"]

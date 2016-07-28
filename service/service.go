@@ -10,16 +10,18 @@ import (
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/store"
+	sluice "github.com/opsee/gmunch/client"
 	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 type service struct {
-	httpServer  *http.Server
-	checkStore  store.CheckStore
-	teamStore   store.TeamStore
-	resultStore results.Store
+	httpServer   *http.Server
+	checkStore   store.CheckStore
+	teamStore    store.TeamStore
+	resultStore  results.Store
+	sluiceClient sluice.Client
 }
 
 func New(pgConn string, resultStore results.Store) (*service, error) {
@@ -28,10 +30,18 @@ func New(pgConn string, resultStore results.Store) (*service, error) {
 		return nil, err
 	}
 
+	sluiceClient, err := sluice.New("sluice.in.opsee.com:8443", sluice.Config{
+		TLSConfig: tls.Config{},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	svc := &service{
-		checkStore:  store.NewCheckStore(db),
-		teamStore:   store.NewTeamStore(db),
-		resultStore: resultStore,
+		checkStore:   store.NewCheckStore(db),
+		teamStore:    store.NewTeamStore(db),
+		resultStore:  resultStore,
+		sluiceClient: sluiceClient,
 	}
 
 	return svc, nil

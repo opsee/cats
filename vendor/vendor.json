@@ -175,6 +175,13 @@
 			"revisionTime": "2016-06-14T21:42:08Z"
 		},
 		{
+			"checksumSHA1": "uwBlYiVD+INZV5a8lz0GVdT7eXE=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/aws/aws-sdk-go/service/kinesis",
+			"path": "github.com/aws/aws-sdk-go/service/kinesis",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
+		},
+		{
 			"checksumSHA1": "68YN+UopWOSISIcQQ6zSVbyaDzQ=",
 			"path": "github.com/aws/aws-sdk-go/service/s3",
 			"revision": "395f62e545197d012698f2ef9814c2f4bc15f02b",
@@ -185,6 +192,13 @@
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "3ac7bf7a47d159a033b107610db8a1b6575507a4",
 			"revisionTime": "2016-02-29T21:34:45Z"
+		},
+		{
+			"checksumSHA1": "uB9mw9vMHYJlJlmTBstl4Pi8ZwU=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/cenkalti/backoff",
+			"path": "github.com/cenkalti/backoff",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
 		},
 		{
 			"checksumSHA1": "Fa/Hw0ByZgcIDU5iG+Jt0MdeYYg=",
@@ -266,10 +280,18 @@
 			"revisionTime": "2016-02-22T23:24:41Z"
 		},
 		{
-			"checksumSHA1": "8oKBuAPKT7noCrssdsxPRp6/vxk=",
+			"checksumSHA1": "5MVpi9U1WCrzZ1VMMn61Fc+trE0=",
+			"origin": "github.com/opsee/cats/vendor/github.com/golang/protobuf/proto",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "9e6977f30c91c78396e719e164e57f9287fff42c",
-			"revisionTime": "2016-05-24T15:56:25-04:00"
+			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+			"revisionTime": "2016-07-27T10:26:17-07:00"
+		},
+		{
+			"checksumSHA1": "x9zGdhDhjnJovsld5QnM5ORfTVI=",
+			"origin": "github.com/opsee/gmunch/vendor/github.com/grepory/scheduler",
+			"path": "github.com/grepory/scheduler",
+			"revision": "1b7b986b61f89b50cc6f8f8699d11ccb4c59d676",
+			"revisionTime": "2016-06-29T14:30:29-07:00"
 		},
 		{
 			"checksumSHA1": "PF8QKs8z1YaNGjTbXqeFsMs30aE=",
@@ -498,6 +520,55 @@
 			"path": "github.com/opsee/basic/tp",
 			"revision": "446d472f64526c8fb3c25bbb459e210959c5eacd",
 			"revisionTime": "2016-07-27T15:52:36-07:00"
+		},
+		{
+			"checksumSHA1": "a03x1RbBIGcQb+rKEvajLtc14FE=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch",
+			"path": "github.com/opsee/gmunch",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "uI6Bq8vjMsDjECXNYutl7LzrEPc=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/client",
+			"path": "github.com/opsee/gmunch/client",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "1bZ4RThtUfTOcRw3iX5i2lq4Mfc=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/consumer/kinesis",
+			"path": "github.com/opsee/gmunch/consumer/kinesis",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "tL+G3DkXO54usj0QXpifzHjGN00=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/producer",
+			"path": "github.com/opsee/gmunch/producer",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "G51t+TFL8HGyPjHH27JJ8IWzvAI=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/producer/kinesis",
+			"path": "github.com/opsee/gmunch/producer/kinesis",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "9osiatcKVA+fTSmcLVBm4IC01/0=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/server",
+			"path": "github.com/opsee/gmunch/server",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
+		},
+		{
+			"checksumSHA1": "fxQoa/Pk+p+PSsn7IJSGtJu75UY=",
+			"origin": "github.com/opsee/cats/vendor/github.com/opsee/gmunch/worker",
+			"path": "github.com/opsee/gmunch/worker",
+			"revision": "8198406e37f3989d4151b24db1df09f1de6d8c29",
+			"revisionTime": "2016-07-28T08:46:14-07:00"
 		},
 		{
 			"checksumSHA1": "4SRqRNsZ2S+7ZXFbHn/4NxrflLU=",
