@@ -5,10 +5,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	// "github.com/opsee/cats/jobs/slack"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/keighl/mandrill"
+	newrelic "github.com/newrelic/go-agent"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/cats/jobs/subscriptions"
 	"github.com/opsee/cats/mailer"
+	"github.com/opsee/cats/service"
 	"github.com/opsee/gmunch"
 	consumer "github.com/opsee/gmunch/consumer/kinesis"
 	producer "github.com/opsee/gmunch/producer/kinesis"
@@ -28,6 +33,24 @@ func main() {
 
 	stripe.Key = viper.GetString("stripe_key")
 
+	awsSession := session.New(&aws.Config{Region: aws.String("us-west-2")})
+	s3Store := &results.S3Store{
+		S3Client:   s3.New(awsSession),
+		BucketName: viper.GetString("results_s3_bucket"),
+	}
+
+	agentConfig := newrelic.NewConfig("Cats", viper.GetString("newrelic_key"))
+	agentConfig.BetaToken = viper.GetString("newrelic_beta_token")
+	agent, err := newrelic.NewApplication(agentConfig)
+	if err != nil {
+		log.WithError(err).Fatal("Unable to start service.")
+	}
+
+	catsSvc, err := service.New(viper.GetString("postgres_conn"), s3Store, agent)
+	if err != nil {
+		log.WithError(err).Fatal("Can't create cats service")
+	}
+
 	server := server.New(server.Config{
 		LogLevel: viper.GetString("log_level"),
 		Producer: producer.New(producer.Config{
@@ -42,7 +65,7 @@ func main() {
 		}),
 		Dispatch: worker.Dispatch{
 			"stripe_hook": func(evt *gmunch.Event) []worker.Task {
-				return []worker.Task{subscriptions.New(evt)}
+				return []worker.Task{subscriptions.New(catsSvc, evt)}
 			},
 			// "slack_notification": func(evt *gmunch.Event) []worker.Task {
 			// 	return []worker.Task{slack.New(evt)}
@@ -62,7 +85,6 @@ func main() {
 		)
 	}()
 
-	var err error
 	select {
 	case err = <-errChan:
 		log.Info("received error from grpc service")

@@ -17,7 +17,17 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 		return nil, fmt.Errorf("invalid request, missing team")
 	}
 
-	t, err := s.teamStore.Get(req.Team.Id)
+	var (
+		t   *schema.Team
+		err error
+	)
+
+	if req.Team.Id != "" {
+		t, err = s.teamStore.Get(req.Team.Id)
+	} else if req.Team.StripeCustomerId != "" {
+		t, err = s.teamStore.GetByStripeId(req.Team.StripeCustomerId)
+	}
+
 	if err != nil {
 		return nil, err
 	}
