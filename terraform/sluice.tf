@@ -21,4 +21,10 @@ resource "aws_ecs_service" "sluice" {
     desired_count = 1
     deployment_maximum_percent = 200
     deployment_minimum_healthy_percent = 100
+    
+    load_balancer {
+        elb_name = "sluice"
+        container_name = "sluice"
+        container_port = 9107
+    }
 }
