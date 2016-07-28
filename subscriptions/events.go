@@ -7,8 +7,12 @@ import (
 )
 
 func HandleEvent(event *stripe.Event) error {
-	log.Infof("subscriptions.HandleEvent: %s", event.Type)
+	log.Infof("subscriptions.HandleEvent: %#v -- %#v", event, *event.Data.Obj)
 
-	// mailer.Send()
+	switch event.Type {
+	case "customer.subscription.trial_will_end":
+		
+	}
+	
 	return nil
 }

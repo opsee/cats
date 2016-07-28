@@ -32,6 +32,11 @@ func (j *Job) Execute() (interface{}, error) {
 		log.WithError(err).Errorf("couldn't decode gmunch event: %#v", j.event)
 		return nil, err
 	}
+	
+	stripeCustomerId := e.GetObjValue("customer")
+	if stripeCustomerId == "" {
+		
+	}
 
 	if err := subscriptions.HandleEvent(event); err != nil {
 		return nil, err
