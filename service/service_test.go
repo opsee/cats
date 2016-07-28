@@ -31,6 +31,10 @@ func (q *testTeamStore) Get(id string) (*schema.Team, error) {
 	return q.curTeam, nil
 }
 
+func (q *testTeamStore) GetByStripeId(id string) (*schema.Team, error) {
+	return q.curTeam, nil
+}
+
 func (q *testTeamStore) GetUsers(id string) ([]*schema.User, error) {
 	var users []*schema.User
 	for _, u := range testutil.Users {

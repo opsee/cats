@@ -67,6 +67,40 @@ func (q *teamStore) Get(id string) (*schema.Team, error) {
 	return team, nil
 }
 
+func (q *teamStore) GetByStripeId(id string) (*schema.Team, error) {
+	team := new(schema.Team)
+	err := sqlx.Get(
+		q,
+		team,
+		`select t.id, t.name, s.plan as subscription_plan, s.quantity as subscription_quantity,
+		 s.status as subscription_status, s.stripe_customer_id, s.stripe_subscription_id from
+		 customers as t left join subscriptions as s on t.subscription_id = s.id
+		 where s.stripe_customer_id = $1 and t.active = true`,
+		id,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	users, err := q.GetUsers(team.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	invites, err := q.GetInvites(team.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	team.Users = append(users, invites...)
+
+	return team, nil
+}
+
 func (q *teamStore) GetUsers(id string) ([]*schema.User, error) {
 	var users []*schema.User
 

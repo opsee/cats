@@ -33,6 +33,22 @@ func TestTeamGet(t *testing.T) {
 	})
 }
 
+func TestTeamGetByStripeId(t *testing.T) {
+	assert := assert.New(t)
+
+	withTeamFixtures(func(q TeamStore) {
+		// getting active teams works
+		team, err := q.GetByStripeId("cus_8oux3kULDWgU8F")
+		assert.NoError(err)
+		assert.NotNil(team)
+		assert.Equal("barbell brigade death squad crew", team.Name)
+		assert.Equal("beta", team.SubscriptionPlan)
+		assert.Equal("active", team.SubscriptionStatus)
+		assert.EqualValues(3, team.SubscriptionQuantity)
+		assert.Equal(4, len(team.Users))
+	})
+}
+
 func TestTeamUpdate(t *testing.T) {
 	assert := assert.New(t)
 
