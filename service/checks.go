@@ -129,6 +129,30 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 		return nil, fmt.Errorf("Request missing CheckID")
 	}
 
+	if req.StateTransitionId != 0 {
+		// We are getting a specific state transition.
+		entry, err := s.checkStore.GetCheckStateTransitionLogEntry(req.CheckId, req.CustomerId, req.StateTransitionId)
+		if err != nil {
+			return nil, err
+		}
+
+		t := &opsee_types.Timestamp{}
+		if err := t.Scan(entry.CreatedAt); err != nil {
+			return nil, err
+		}
+
+		return &opsee.GetCheckStateTransitionsResponse{
+			Transitions: []*schema.CheckStateTransition{&schema.CheckStateTransition{
+				CheckId:    entry.CheckId,
+				From:       entry.From.String(),
+				To:         entry.To.String(),
+				OccurredAt: t,
+				CustomerId: entry.CustomerId,
+				Id:         entry.Id,
+			}},
+		}, nil
+	}
+
 	if req.AbsoluteStartTime == nil {
 		return nil, fmt.Errorf("Request missing AbsoluteStartTime")
 	}
@@ -171,10 +195,13 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 			From:       e.From.String(),
 			To:         e.To.String(),
 			OccurredAt: timestamp,
+			Id:         e.Id,
 		})
 	}
 
-	return &opsee.GetCheckStateTransitionsResponse{logEntries}, nil
+	return &opsee.GetCheckStateTransitionsResponse{
+		Transitions: logEntries,
+	}, nil
 }
 
 func (s *service) GetCheckSnapshot(ctx context.Context, req *opsee.GetCheckSnapshotRequest) (*opsee.GetCheckSnapshotResponse, error) {

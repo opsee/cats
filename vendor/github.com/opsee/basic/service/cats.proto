@@ -33,6 +33,7 @@ message GetCheckStateTransitionsRequest{
     string customer_id = 2;
     opsee.types.Timestamp AbsoluteStartTime = 3;
     opsee.types.Timestamp AbsoluteEndTime = 4;
+	int64 state_transition_id = 5;
 }
 
 message GetCheckStateTransitionsResponse{

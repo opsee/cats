@@ -95,6 +95,9 @@ func (q *testCheckStore) GetLiveBastions(customerId, checkId string) ([]string, 
 func (q *testCheckStore) GetCheckStateTransitionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error) {
 	return nil, nil
 }
+func (q *testCheckStore) GetCheckStateTransitionLogEntry(checkId, customerId string, transitionId int64) (*checks.StateTransitionLogEntry, error) {
+	return nil, nil
+}
 func (q *testCheckStore) GetCheck(user *schema.User, checkId string) (*schema.Check, error) {
 	return nil, nil
 }

@@ -169,6 +169,17 @@ func (q *checkStore) GetCheckStateTransitionLogEntries(checkId, customerId strin
 	return logEntries, nil
 }
 
+// GetStateTransitionLogEntry returns state transition log entries between a start and end time
+// log entry or an error.
+func (q *checkStore) GetCheckStateTransitionLogEntry(checkId, customerId string, transitionId int64) (entry *checks.StateTransitionLogEntry, err error) {
+	err = sqlx.Get(q, &entry, "SELECT * FROM check_state_transitions WHERE check_id=$1 AND customer_id=$2 AND id = $3", checkId, customerId, transitionId)
+	if err != nil {
+		return nil, err
+	}
+
+	return entry, nil
+}
+
 // GetChecks gets all checks for a customer
 func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err error) {
 	dbcs := []dbCheck{}

@@ -16,6 +16,7 @@ type CheckStore interface {
 	CreateStateTransitionLogEntry(checkId, customerId string, fromState, toState checks.StateId) (*checks.StateTransitionLogEntry, error)
 	GetLiveBastions(customerId, checkId string) ([]string, error)
 	GetCheckStateTransitionLogEntries(checkId, customerId string, from, to time.Time) ([]*checks.StateTransitionLogEntry, error)
+	GetCheckStateTransitionLogEntry(checkId, customerId string, transitionId int64) (*checks.StateTransitionLogEntry, error)
 	GetCheck(user *schema.User, checkId string) (*schema.Check, error)
 	GetChecks(user *schema.User) ([]*schema.Check, error)
 	GetCheckCount(customerId string) (int32, error)
