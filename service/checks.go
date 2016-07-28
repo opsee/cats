@@ -84,6 +84,7 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 	for i, b := range bastions {
 		wg.Add(1)
 		go func(bastionId string, idx int) {
+			defer wg.Done()
 			var result *schema.CheckResult
 			result, err = s.resultStore.GetResultByCheckId(bastionId, req.CheckId)
 			if err != nil {
@@ -92,10 +93,9 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 					"check_id":   req.CheckId,
 					"bastion_id": bastionId,
 				}).WithError(err).Error("Error getting result from result store.")
-				continue
+				return
 			}
 			results[idx] = result
-			wg.Done()
 		}(b, i)
 	}
 	wg.Wait()
