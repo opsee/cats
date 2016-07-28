@@ -32,11 +32,13 @@ func main() {
 		LogLevel: viper.GetString("log_level"),
 		Producer: producer.New(producer.Config{
 			Stream: viper.GetString("kinesis_stream"),
+			Region: "us-west-2",
 		}),
 		Consumer: consumer.New(consumer.Config{
 			Stream:        viper.GetString("kinesis_stream"),
 			EtcdEndpoints: viper.GetStringSlice("etcd_address"),
 			ShardPath:     viper.GetString("shard_path"),
+			Region:        "us-west-2",
 		}),
 		Dispatch: worker.Dispatch{
 			"stripe_hook": func(evt *gmunch.Event) []worker.Task {
