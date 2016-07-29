@@ -32,6 +32,10 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 		return nil, err
 	}
 
+	if team == nil {
+		return nil, fmt.Errorf("no such team")
+	}
+
 	if err := subscriptions.Get(t); err != nil {
 		log.WithError(err).Error("error fetching subscription data from stripe")
 	}
