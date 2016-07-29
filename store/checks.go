@@ -184,7 +184,7 @@ func (q *checkStore) GetCheckStateTransitionLogEntry(checkId, customerId string,
 // GetChecks gets all checks for a customer
 func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err error) {
 	dbcs := []dbCheck{}
-	err = sqlx.Select(q, &dbcs, "SELECT id, COALESCE(interval, 30) AS interval, customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id FROM checks WHERE customer_id=$1 AND deleted=false", user.CustomerId)
+	err = sqlx.Select(q, &dbcs, "SELECT id, COALESCE(interval, 30) AS interval, checks.customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id, COALESCE(state_name, 'INVALID') AS state_name FROM checks LEFT OUTER JOIN check_states ON (checks.id = check_states.check_id) WHERE checks.customer_id=$1 AND deleted=false", user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (q *checkStore) GetChecks(user *schema.User) (checks []*schema.Check, err e
 // GetCheck gets a single check for a customer
 func (q *checkStore) GetCheck(user *schema.User, checkId string) (check *schema.Check, err error) {
 	bullshit := &dbCheck{}
-	err = q.QueryRowx("SELECT id, COALESCE(interval, 30) AS interval, customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id FROM checks WHERE id=$1 AND customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(bullshit)
+	err = q.QueryRowx("SELECT id, COALESCE(interval, 30) AS interval, checks.customer_id, name, execution_group_id, min_failing_count, min_failing_time, COALESCE(target_name, '') AS target_name, target_type, target_id, COALESCE(state_name, 'INVALID') AS state_name FROM checks LEFT OUTER JOIN check_states ON (checks.id = check_states.check_id) WHERE id=$1 AND checks.customer_id=$2 AND deleted=false", checkId, user.CustomerId).StructScan(bullshit)
 	if err != nil {
 		return nil, err
 	}
