@@ -24,12 +24,13 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 
 		for _, u := range team.Users {
 			if u.HasPermission("admin") || u.HasPermission("billing") {
+				logger := log.WithFields(log.Fields{"template": "warning-minus-three", "email": u.Email})
 				_, err := mailer.Send(u.Email, u.Name, "warning-minus-three", map[string]interface{}{})
 				if err != nil {
-					log.WithError(err).Error("couldn't send email to mandrill")
+					logger.WithError(err).Error("couldn't send email to mandrill")
 				}
 
-				log.WithFields(log.Fields{"template": "warning-minus-three", "email": u.Email}).Info("sent email")
+				logger.Info("sent email")
 			}
 		}
 	}
