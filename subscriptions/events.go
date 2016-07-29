@@ -5,6 +5,7 @@ import (
 	"github.com/opsee/cats/mailer"
 	log "github.com/opsee/logrus"
 	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/sub"
 )
 
 func HandleEvent(team *schema.Team, event *stripe.Event) error {
@@ -22,18 +23,60 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 			return nil
 		}
 
-		for _, u := range team.Users {
-			if u.HasPermission("admin") || u.HasPermission("billing") {
-				logger := log.WithFields(log.Fields{"template": "warning-minus-three", "email": u.Email})
-				_, err := mailer.Send(u.Email, u.Name, "warning-minus-three", map[string]interface{}{})
-				if err != nil {
-					logger.WithError(err).Error("couldn't send email to mandrill")
-				}
+		mailBillingUsers(team, "warning-minus-three", map[string]interface{}{})
 
-				logger.Info("sent email")
-			}
+	case "invoice.payment_failed":
+		// only send this to non-free plan people
+		// no idea why this would happen
+		if team.SubscriptionPlan == "free" {
+			return nil
 		}
+
+		// if we're trialing and payment fails, then the trial must have expired
+		// so we'll send them a special email
+		if team.SubscriptionStatus == string(sub.Trialing) {
+			mailBillingUsers(team, "trial-expired", map[string]interface{}{})
+		}
+
+		if team.SubscriptionStatus == string(sub.Trialing) {
+			switch event.GetObjValue("attempt_count") {
+			case "1":
+				mailBillingUsers(team, "warning-zero", map[string]interface{}{})
+			case "2":
+				mailBillingUsers(team, "warning-three", map[string]interface{}{})
+			case "3":
+				mailBillingUsers(team, "warning-seven", map[string]interface{}{})
+			}
+
+			return nil
+		}
+
+		team.SubscriptionStatus = string(sub.PastDue)
+
+	case "invoice.payment_succeeded":
+		// make sure our db is reflecting the right status
+		team.SubscriptionStatus = string(sub.Active)
 	}
 
 	return nil
+}
+
+func mailBillingUsers(team *schema.Team, template string, vars map[string]interface{}) {
+	withBillingUsers(team, func(u *schema.User) {
+		logger := log.WithFields(log.Fields{"template": template, "email": u.Email})
+		_, err := mailer.Send(u.Email, u.Name, template, vars)
+		if err != nil {
+			logger.WithError(err).Error("couldn't send email to mandrill")
+		}
+
+		logger.Info("sent email")
+	})
+}
+
+func withBillingUsers(team *schema.Team, billFunc func(*schema.User)) {
+	for _, u := range team.Users {
+		if u.HasPermission("admin") || u.HasPermission("billing") {
+			billFunc(u)
+		}
+	}
 }

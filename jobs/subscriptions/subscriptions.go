@@ -64,5 +64,12 @@ func (j *Job) Execute() (interface{}, error) {
 		return nil, err
 	}
 
+	if _, err := j.service.UpdateTeam(context.Background(), &opsee.UpdateTeamRequest{
+		Team: teamResponse.Team,
+	}); err != nil {
+		log.WithError(err).Error("couldn't update team")
+		return nil, err
+	}
+
 	return struct{}{}, nil
 }
