@@ -29,7 +29,7 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 					log.WithError(err).Error("couldn't send email to mandrill")
 				}
 
-				log.WithFields(log.Fields{"template": "warning-minus-three", "email", u.Email}).Info("sent email")
+				log.WithFields(log.Fields{"template": "warning-minus-three", "email": u.Email}).Info("sent email")
 			}
 		}
 	}
