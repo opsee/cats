@@ -12,6 +12,11 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 
 	switch event.Type {
 	case "customer.subscription.trial_will_end":
+		// only send this to non-free plan people
+		if team.SubscriptionPlan == "free" {
+			return nil
+		}
+
 		// if they've added a payment source, then no worries, don't send an email
 		if team.CreditCardInfo != nil {
 			return nil
@@ -23,6 +28,8 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 				if err != nil {
 					log.WithError(err).Error("couldn't send email to mandrill")
 				}
+
+				log.WithFields(log.Fields{"template": "warning-minus-three", "email", u.Email}).Info("sent email")
 			}
 		}
 	}
