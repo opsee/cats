@@ -32,7 +32,7 @@ func (s *service) GetTeam(ctx context.Context, req *opsee.GetTeamRequest) (*opse
 		return nil, err
 	}
 
-	if team == nil {
+	if t == nil {
 		return nil, fmt.Errorf("no such team")
 	}
 
