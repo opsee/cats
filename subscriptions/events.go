@@ -53,8 +53,10 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 		return nil
 
 	case "invoice.payment_succeeded":
-		// make sure our db is reflecting the right status
-		team.SubscriptionStatus = string(sub.Active)
+		// make sure our db is reflecting the right status if they have a cc
+		if team.CreditCardInfo != nil {
+			team.SubscriptionStatus = string(sub.Active)
+		}
 	}
 
 	return nil
