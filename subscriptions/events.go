@@ -36,22 +36,21 @@ func HandleEvent(team *schema.Team, event *stripe.Event) error {
 		// so we'll send them a special email
 		if team.SubscriptionStatus == string(sub.Trialing) {
 			mailBillingUsers(team, "trial-expired", map[string]interface{}{})
-		}
-
-		if team.SubscriptionStatus == string(sub.Trialing) {
-			switch event.GetObjValue("attempt_count") {
-			case "1":
-				mailBillingUsers(team, "warning-zero", map[string]interface{}{})
-			case "2":
-				mailBillingUsers(team, "warning-three", map[string]interface{}{})
-			case "3":
-				mailBillingUsers(team, "warning-seven", map[string]interface{}{})
-			}
-
+			team.SubscriptionStatus = string(sub.PastDue)
 			return nil
 		}
 
-		team.SubscriptionStatus = string(sub.PastDue)
+		// this is just a regular payment failure
+		switch event.GetObjValue("attempt_count") {
+		case "1":
+			mailBillingUsers(team, "warning-zero", map[string]interface{}{})
+		case "2":
+			mailBillingUsers(team, "warning-three", map[string]interface{}{})
+		case "3":
+			mailBillingUsers(team, "warning-seven", map[string]interface{}{})
+		}
+
+		return nil
 
 	case "invoice.payment_succeeded":
 		// make sure our db is reflecting the right status
