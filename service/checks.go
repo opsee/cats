@@ -65,7 +65,7 @@ func (s *service) GetCheckCount(ctx context.Context, req *opsee.GetCheckCountReq
 
 	count, err := s.checkStore.GetCheckCount(req.User.CustomerId)
 	if err != nil {
-		log.WithError(err).Error("db request failed")
+		log.WithError(err).Error("Error getting check count from check store.")
 		return nil, err
 	}
 
@@ -86,9 +86,15 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 		return nil, fmt.Errorf("Request missing CheckID")
 	}
 
+	logger := log.WithFields(log.Fields{
+		"customer_id": req.CustomerId,
+		"check_id":    req.CheckId,
+	})
+
 	defer agent.EndSegment(agent.StartSegment(), "checkStore.GetLiveBastions")
 	bastions, err := s.checkStore.GetLiveBastions(req.CustomerId, req.CheckId)
 	if err != nil {
+		logger.WithError(err).Error("Error getting live bastions from check store.")
 		return nil, err
 	}
 
@@ -115,29 +121,39 @@ func (s *service) GetCheckResults(ctx context.Context, req *opsee.GetCheckResult
 	wg.Wait()
 	// We can't return partial results, so we return an error if there was any error.
 	if err != nil {
+		logger.WithError(err).Error("Error getting check result for bastions.")
 		return nil, err
 	}
-	return &opsee.GetCheckResultsResponse{results}, nil
+	return &opsee.GetCheckResultsResponse{Results: results}, nil
 }
 
 func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCheckStateTransitionsRequest) (response *opsee.GetCheckStateTransitionsResponse, err error) {
 	if req.CustomerId == "" {
+		log.Error("Request missing CheckID")
 		return nil, fmt.Errorf("Request missing CustomerID")
 	}
 
 	if req.CheckId == "" {
+		log.Error("Request missing CheckID")
 		return nil, fmt.Errorf("Request missing CheckID")
 	}
+
+	logger := log.WithFields(log.Fields{
+		"customer_id": req.CustomerId,
+		"check_id":    req.CheckId,
+	})
 
 	if req.StateTransitionId != 0 {
 		// We are getting a specific state transition.
 		entry, err := s.checkStore.GetCheckStateTransitionLogEntry(req.CheckId, req.CustomerId, req.StateTransitionId)
 		if err != nil {
+			logger.WithError(err).Error("Error getting check state transition from DB.")
 			return nil, err
 		}
 
 		t := &opsee_types.Timestamp{}
 		if err := t.Scan(entry.CreatedAt); err != nil {
+			logger.WithError(err).Error("Error scanning log entry created at field.")
 			return nil, err
 		}
 
@@ -154,39 +170,53 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 	}
 
 	if req.AbsoluteStartTime == nil {
-		return nil, fmt.Errorf("Request missing AbsoluteStartTime")
+		err := fmt.Errorf("Request missing AbsoluteStartTime")
+		logger.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 
 	if req.AbsoluteEndTime == nil {
-		return nil, fmt.Errorf("Request missing AbsoluteEndTime")
+		err := fmt.Errorf("Request missing AbsoluteEndTime")
+		logger.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 
 	st, err := req.AbsoluteStartTime.Value()
 	if err != nil {
-		return nil, fmt.Errorf("Invalid AbsoluteStartTime")
+		err := fmt.Errorf("Invalid AbsoluteStartTime")
+		log.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 	et, err := req.AbsoluteEndTime.Value()
 	if err != nil {
-		return nil, fmt.Errorf("Invalid AbsoluteEndTime")
+		err := fmt.Errorf("Invalid AbsoluteEndTime")
+		logger.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 	ast, aok := st.(time.Time)
 	if !aok {
-		return nil, fmt.Errorf("invalid AbsoluteStartTime")
+		err := fmt.Errorf("invalid AbsoluteStartTime")
+		logger.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 	aet, eok := et.(time.Time)
 	if !eok {
-		return nil, fmt.Errorf("invalid AbsoluteEndTime")
+		err := fmt.Errorf("invalid AbsoluteEndTime")
+		logger.WithError(err).Error("Invalid request.")
+		return nil, err
 	}
 
 	var logEntries []*schema.CheckStateTransition
 	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CheckId, req.CustomerId, ast, aet)
 	if err != nil {
+		logger.WithError(err).Error("Error getting check state transition log entry from check store.")
 		return nil, err
 	}
 
 	for _, e := range entries {
 		timestamp := &opsee_types.Timestamp{}
 		if err := timestamp.Scan(e.CreatedAt); err != nil {
+			log.WithError(err).Error("Error scaning log entry timestamp.")
 			continue
 		}
 
@@ -207,15 +237,18 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 func (s *service) GetCheckSnapshot(ctx context.Context, req *opsee.GetCheckSnapshotRequest) (*opsee.GetCheckSnapshotResponse, error) {
 	user := req.Requestor
 	if user == nil {
+		log.Error("Request requires a user.")
 		return nil, fmt.Errorf("Request requires a user.")
 	}
 
 	if err := user.Validate(); err != nil {
+		log.WithError(err).Error("Error validating user object in request.")
 		return nil, err
 	}
 
 	ss, err := s.resultStore.GetCheckSnapshot(req.TransitionId, req.CheckId)
 	if err != nil {
+		log.WithError(err).Error("Error getting check snapshot.")
 		return nil, err
 	}
 
