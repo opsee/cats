@@ -198,6 +198,9 @@ func main() {
 			return
 		}
 		check.Results = results
+		check.State = state.State
+		check.FailingCount = state.FailingCount
+		check.ResponseCount = state.ResponseCount
 
 		err = s3Store.PutCheckSnapshot(logEntry.Id, check)
 		if err != nil {
