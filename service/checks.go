@@ -148,7 +148,7 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 		entry, err := s.checkStore.GetCheckStateTransitionLogEntry(req.CheckId, req.CustomerId, req.StateTransitionId)
 		if err != nil {
 			logger.WithError(err).Error("Error getting check state transition from DB.")
-			return nil, err
+			return nil, fmt.Errorf("Error getting check state transition log entry.")
 		}
 
 		t := &opsee_types.Timestamp{}
@@ -210,7 +210,7 @@ func (s *service) GetCheckStateTransitions(ctx context.Context, req *opsee.GetCh
 	entries, err := s.checkStore.GetCheckStateTransitionLogEntries(req.CheckId, req.CustomerId, ast, aet)
 	if err != nil {
 		logger.WithError(err).Error("Error getting check state transition log entry from check store.")
-		return nil, err
+		return nil, fmt.Errorf("Error getting check state transitions.")
 	}
 
 	for _, e := range entries {
@@ -249,7 +249,7 @@ func (s *service) GetCheckSnapshot(ctx context.Context, req *opsee.GetCheckSnaps
 	ss, err := s.resultStore.GetCheckSnapshot(req.TransitionId, req.CheckId)
 	if err != nil {
 		log.WithError(err).Error("Error getting check snapshot.")
-		return nil, err
+		return nil, fmt.Errorf("Error getting check snapshot.")
 	}
 
 	resp := &opsee.GetCheckSnapshotResponse{
